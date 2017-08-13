@@ -1,0 +1,11 @@
+git diff <fileName>		查看某一个文件的修改
+git status			查看项目的的变化，包括暂存区
+git add <fileName>		把已修改的文件加入到暂存区
+git commmit -m <message>	把暂存区已经修改的文件提交
+git push			推送到远程
+git pull			拉取更新
+git log				项目日志
+git checkout <fileName>		还原某个文件
+git branch			查看当前分支
+git marge <branchName>		合并某个分支到当前分支
+git remote set-url origin <url>	修改远端分支的链接

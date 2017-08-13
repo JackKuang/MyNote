@@ -1,0 +1,14 @@
+DECLARE 
+@A1 VARCHAR(10),
+@A2 VARCHAR(10),
+@A3 INT
+DECLARE CURSOR YOUCURNAME FOR SELECT A1,A2,A3 FROM YOUTABLENAME
+OPEN YOUCURNAME
+fetch next from youcurname into @a1,@a2,@a3
+while @@fetch_status<>-1
+begin
+-- operate
+fetch next from youcurname into @a1,@a2,@a3
+end
+close youcurname
+deallocate youcurname
