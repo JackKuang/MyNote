@@ -1,0 +1,7 @@
+<!-- 针对maven资源库国内访问比较慢，使用了maven的资源库 -->
+<mirror>
+	<id>alimaven</id>
+	<name>aliyun maven</name>
+	<url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+	<mirrorOf>central</mirrorOf>        
+</mirror>
