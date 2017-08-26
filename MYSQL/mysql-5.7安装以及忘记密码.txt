@@ -40,3 +40,5 @@ update mysql.user set authentication_string=password('123456') where user='root'
 8.关闭mysql服务。
 9.在“my.ini”末尾删除“skip-grant-tables”
 10.启动myqsl服务。
+
+提示密码过期，cmd登陆后执行“SET PASSWORD = PASSWORD('123456');”
