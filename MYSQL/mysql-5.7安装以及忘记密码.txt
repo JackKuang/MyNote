@@ -20,6 +20,10 @@ character-set-server=utf8
 default-storage-engine=INNODB
 
 3.管理员运行cmd，执行以下目录
+
+mysql安装
+mysql install
+
 mysqld --initialize --user=mysql --console
 记住密码
 
