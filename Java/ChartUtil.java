@@ -25,10 +25,10 @@ import org.jfree.chart.labels.ItemLabelPosition;
 import org.jfree.chart.labels.StandardCategoryItemLabelGenerator;
 import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
 import org.jfree.chart.plot.CategoryPlot;
-import org.jfree.chart.plot.PiePlot3D;
+import org.jfree.chart.plot.PiePlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.category.BarRenderer3D;
+import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.chart.title.TextTitle;
@@ -40,8 +40,8 @@ import org.jfree.ui.TextAnchor;
 
 public class ChartUtil {
 
-    public static String createPieChart3D(String title,PieDataset dataset,String path){
-        JFreeChart chart = ChartFactory.createPieChart3D(title,dataset,true,true,Locale.CHINA);
+    public static String createPieChart(String title,PieDataset dataset,String path){
+        JFreeChart chart = ChartFactory.createPieChart(title,dataset,true,true,Locale.CHINA);
 
         // 使下面的说明标签字体清晰,类似于去锯齿的效果
         chart.getRenderingHints().put(RenderingHints.KEY_TEXT_ANTIALIASING,RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
@@ -55,7 +55,7 @@ public class ChartUtil {
         // 设置图例(Legend)上的文字(//底部的字体)
         chart.getLegend().setItemFont(new Font("隶书",Font.CENTER_BASELINE,15));
 
-        PiePlot3D plot = (PiePlot3D) chart.getPlot();
+        PiePlot plot = (PiePlot) chart.getPlot();
         // 图片中显示百分比:默认方式
 
         // 指定饼图轮廓线的颜色
@@ -114,13 +114,13 @@ public class ChartUtil {
     }
 
     public static String createLineChart(String title,String domainAxisName,String rangeAxisName,DefaultCategoryDataset ds,String path){
-        JFreeChart chart = ChartFactory.createLineChart3D(title,domainAxisName,rangeAxisName,ds,PlotOrientation.VERTICAL, // 绘制方向
+        JFreeChart chart = ChartFactory.createLineChart(title,domainAxisName,rangeAxisName,ds,PlotOrientation.VERTICAL, // 绘制方向
                 true, // 显示图例
                 true, // 采用标准生成器
                 false // 是否生成超链接
         );
         chart.getTitle().setFont((new Font("隶书",Font.CENTER_BASELINE,20))); // 设置标题字体
-        chart.getLegend().setItemFont(new Font("隶书",Font.CENTER_BASELINE,15));// 设置图例类别字体
+        chart.getLegend().setItemFont(new Font("隶书",Font.CENTER_BASELINE,15));// 设置图例
         // 获取绘图区对象
         CategoryPlot plot = chart.getCategoryPlot();
         plot.setBackgroundPaint(Color.LIGHT_GRAY); // 设置绘图区背景色
@@ -131,11 +131,10 @@ public class ChartUtil {
 
         CategoryAxis domainAxis = plot.getDomainAxis();
         domainAxis.setLabelFont(new Font("隶书",Font.CENTER_BASELINE,15)); // 设置横轴字体
-        // domainAxis.setTickLabelFont(font);// 设置坐标轴标尺值字体
+        domainAxis.setTickLabelFont(new Font("黑体", Font.CENTER_BASELINE, 11));   
         domainAxis.setLowerMargin(0.01);// 左边距 边框距离
         domainAxis.setUpperMargin(0.06);// 右边距 边框距离,防止最后边的一个数据靠近了坐标轴。
         domainAxis.setMaximumCategoryLabelLines(2);
-
         ValueAxis rangeAxis = plot.getRangeAxis();
         rangeAxis.setLabelFont(new Font("隶书",Font.CENTER_BASELINE,15));
         rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());// Y轴显示整数
@@ -225,7 +224,7 @@ public class ChartUtil {
     }
 
     public static String createBarChart(String title,String domainName,String rangeName,CategoryDataset dataset,String path){
-        JFreeChart chart = ChartFactory.createBarChart3D(title,domainName,rangeName,dataset,PlotOrientation.VERTICAL,true,true,false);
+        JFreeChart chart = ChartFactory.createBarChart(title,domainName,rangeName,dataset,PlotOrientation.VERTICAL,true,true,false);
         CategoryPlot plot = chart.getCategoryPlot();
         chart.getTitle().setFont((new Font("隶书",Font.CENTER_BASELINE,20))); // 设置标题字体
         // 设置网格背景颜色
@@ -233,7 +232,7 @@ public class ChartUtil {
         // 设置网络竖线颜色
         plot.setDomainGridlinePaint(Color.pink);
         // 显示每个柱的数值，并修改该数字的字体属性
-        BarRenderer3D renderer = new BarRenderer3D();
+        BarRenderer renderer = new BarRenderer();
         renderer.setBaseItemLabelGenerator(new StandardCategoryItemLabelGenerator());
         renderer.setBaseItemLabelsVisible(true);
         // 默认的数字显示在柱子中，通过以下两句调整数字的显示
