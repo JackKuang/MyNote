@@ -1,0 +1,23 @@
+【ServletContext】（一次启动）
+
+当servlets容器（比如Apache tomcat）启动的时候，它会加载和部署所有的web应用。当一个web应用加载之后，servlets容器会创建一次servletContext并保存在服务器的内存中，web应用的web.xml会被解析，每一个在web.xml中被找到的<servlet>, <filter>和<listener> 或者注解（分别对应上述@WebServlet, @WebFilter 和 @WebListener）同样也会被创建一次并保存在内存中。对于所有的filters，这个init()方法会被立即调用。当servlet容器关闭的时候，将会卸载素偶有的web应用，并且会调用servlets和filter的destroy()方法，最终servletContext和所有的servlet、filter和listener实例被销毁。
+当servlets中有<servlet><load-on-startup> 或者 @WebServlet(loadOnStartup)的值大于0的时候，init()方法在启动的时候同样会被立即调用，这些servlets初始化的顺序和load-on-startup中值展现的顺序一致，如果他们是相同的按照web.xml中的顺序加载，又或者load-on-startup顺序缺失init()方法的第一次调用会发生在第一个http请求发生的时候。
+
+【HttpServletRequest and HttpServletResponse】（一次请求）
+
+servlets容器依附于在特定端口监听http请求的web服务器，我们在开发的时候通常使用的是8080端口。当一个客户端（使用浏览器的用户）发送一个http请求的时候，servlets容器会创建一个新的HttpServletRequest和HttpServletResponse对象，在一个线程中，通过在filter和servlet中已经创建了的方法匹配URL来传递。
+这个request对象提供了http请求的所有信息，比如请求的头和请求的主体，这些response对象提供了你灵活控制发送http response的方式，比如设置头和体（通常包含jsp中HTML的内容）。当一个http response提交并完成的时候，request和response对象都会被销毁。
+
+【HttpSession】（一个浏览器）
+
+当一个客户端第一次访问web应用的时候或者httpSession第一次被request.getSession()获取的时候，servlets容器会创建它，产生一个long并且是唯一的一个ID（可以通过session.getId()获取）并且存储在服务器的内存中，servlets容器同样会在http response头中的Set-Cookie设置cookie，使用JESSIONID作为cookie的名字，唯一的session ID作为cookie的值。
+因为每一个http cookie的详细说明（一个良好的web浏览器和web服务器间的契约必须要附加传递），只要cookie有效，客户端会在后续的request中在cookie的头中发送回cookie回去。使用浏览器内部的http流量监控你可以检查他们，servlets容器将决定每个http request中名字为JSESSRIONID和值为sessionID的cookie和服务器内存中哪一个httpSession相关联。
+httpSession存活的时间是由<session-timeout>设置的时间决定的，你可以在web.xml中进行设定，默认情况下是30分钟。所以当客户端不访问服务器超过30分钟的时候，servlets容器会销毁这个session。每一个后续的请求，即使已经指定了cookie，也不会访问同一个session了，servlets容器会创建一个新的session。
+另一方面，session cookie在客户端也有一个默认的时间，只要这个浏览器是运行的。所以当客户端关闭浏览器的之后，客户端的session会被销毁，再次打开浏览器同一个session不会被发送，一个新的request.getSession()会返回一个新的httpSession并用新的sessionID设置cookie。
+
+【生存周期】
+
+ServletContext的生命周期和web应用的生命周期一样长，被所有session中的所有请求所共享。
+httpSession的生命周期和客户端服务器运行的时间一样长，只要服务器端没有超时，在同一个session中共享所有请求。
+HttpServletRequest 和HttpServletResponse的生命周期的request发送和response完成，不能被共享。
+servlet、filter和listener的生命周期和web应用的周期一样长，被所有session中的所有请求共享
