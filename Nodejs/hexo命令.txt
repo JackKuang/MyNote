@@ -1,0 +1,22 @@
+
+Hexo初始化
+hexo init
+
+生成静态页面
+hexo generate/-g	
+deploy:
+  type: git
+  repository: https://github.com/JackKuang/JackKuang.github.io.git
+  branch: master
+
+
+npm install hexo-deployer-git --save
+
+new
+
+hexo clean
+hexo generate
+hexo deploy
+
+http://dev.duoshuo.com/threads/541d3b2b40b5abcd2e4df0e9
+
