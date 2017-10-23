@@ -1,0 +1,21 @@
+【JAVA IFELSE判断】
+Subject subject = SecurityUtils.getSubject();  
+if(subject.hasRole(“admin”)) {  
+    //有权限  
+} else {  
+    //无权限  
+}
+
+
+【注解完成】
+@RequiresRoles("admin")  
+public void hello() {  
+    //有权限  
+}
+
+
+
+【JSP/GSP标签】
+<shiro:hasRole name="admin">  
+<!— 有权限 —>  
+</shiro:hasRole>   
