@@ -1,0 +1,42 @@
+CentOS 7 中，使用了新型的firewall，渠道了iptables防火墙
+
+查看版本： firewall-cmd --version
+
+查看帮助： firewall-cmd --help
+
+显示状态： firewall-cmd --state
+
+启动FirewallD服务：
+
+#设置开机启动
+	systemctl enable firewalld.service
+开启服务
+	systemctl start firewalld.service
+查看防火墙状态
+	systemctl status firewalld
+
+启动关闭
+
+systemctl stop firewalld
+
+systemctl disable firewalld
+
+yum install iptables-services
+
+systemctl start iptables
+
+systemctl enable iptables
+
+
+添加
+	firewall-cmd --add-port=80/tcp --permanent（--permanent永久生效）
+删除
+	firewall-cmd --remove-port=80/tcp --permanent
+查看
+	firewall-cmd --zone= public --query-port=80/tcp
+
+重新载入
+	firewall-cmd --reload
+
+
+https://www.landui.com/help/show-5303.html

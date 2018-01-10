@@ -1,0 +1,25 @@
+¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª
+»·¾³±äÁ¿ÅäÖÃÎÄ¼þ£º/etc/profile
+
+»·¾³±äÁ¿
+export JAVA_HOME=/opt/jdk1.8.0_131
+export JRE_HOME=/opt/jdk1.8.0_131/jre
+
+export CATALINA_HOME=/opt/apache-tomcat-8.0.44
+export CATALINA_BASE=/opt/apache-tomcat-8.0.44
+export TOMCAT_HOME=/opt/apache-tomcat-8.0.44
+
+export CATALINA_HOME_2=/opt/apache-tomcat-8.0.44_2
+export CATALINA_BASE_2=/opt/apache-tomcat-8.0.44_2
+export TOMCAT_HOME_2=/opt/apache-tomcat-8.0.44_2
+
+export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+export PATH=$PATH:$JAVA_HOME/bin
+
+export PATH=$PATH:/opt/python3/bin
+
+
+¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª
+µÚ¶þ¸öTomcatÐÞ¸Äcatalina.sh£¬ÅäÖÃCATALINA
+export CATALINA_BASE=$CATALINA_BASE_2
+export CATALINA_HOME=$CATALINA_HOME_2
