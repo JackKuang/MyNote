@@ -1,0 +1,20 @@
+yum install docker -y
+
+阿里云
+拉取更新
+docker pull 
+导出备份
+docker save -o path
+导入备份
+docker load -i  *.tar
+
+创建镜像容器
+docker run
+
+
+查看已运行容器
+docker ps
+
+执行
+
+docker exec
