@@ -34,6 +34,10 @@ public class Base64Util {
 			return false;
 		BASE64Decoder decoder = new BASE64Decoder();
 		try {
+			//tomcat下 使用base64上传 会将+变成空格，所以转图片前要进行转换
+			//或者提交之前encode以及拿到数据后decode
+			strImg = strImg.replaceAll(" ", "+");
+			// Base64解码
 			// Base64解码
 			byte[] b = decoder.decodeBuffer(imgStr);
 			for (int i = 0; i < b.length; ++i) {
