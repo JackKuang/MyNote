@@ -1,0 +1,24 @@
+free -m查看内存状态
+
+df -B M（或df -m）查看各分区当前使用情况
+
+dd if=/dev/zero of=/swapadd bs=1024 count=536870912
+ /dev/zero 你先要分配空间的盘名；
+ /swapadd 分配的名称
+ bs=1024 单位
+ count=524288 数量（按单位自己算）
+
+
+创建虚拟内存
+mkswap /swapadd
+
+开启虚拟内存 swapon /swapadd
+关闭虚拟内存 swapoff /swapadd
+
+
+//为确定使用
+若要想使开机时自启用，则需修改文件/etc/fstab中的swap行： 
+/swap/swapadd swap swap defaults 0 0
+
+//删除虚拟内存
+rm -f /swap/swapadd
