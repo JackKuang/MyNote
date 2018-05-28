@@ -24,12 +24,12 @@ Elasticsearch
 	By default, each index in Elasticsearch is allocated 5 primary shards and 1 replica which means that if you have at least two nodes in your cluster,
 	your index will have 5 primary shards and another 5 replica shards (1 complete replica) for a total of 10 shards per index.
 三、安装
-	JDK 1.8
+	JDK 1.8.0_131
 	启动额外命令
 	./elasticsearch -Ecluster.name=my_cluster_name -Enode.name=my_node_name
 四、使用
 	REST API
-	端口：9200（请求）、9300
+	端口：9200（请求）
 	GET /_cat/health?v 服务健康状况
 		Green - everything is good (cluster is fully functional)
 		Yellow - all data is available but some replicas are not yet allocated (cluster is fully functional)
@@ -43,7 +43,7 @@ Elasticsearch
 		{
 		  "name": "John Doe"
 		}
-		往索引中增加数据(ID为1)
+		往索引中增加数据(ID为1)（更新也是这个）
 
 	GET /customer/_doc/1?pretty /index/type/id 取数据（pretty格式化界面）
 
@@ -59,7 +59,16 @@ Elasticsearch
 		{
 		  "doc": { "name": "Jane Doe", "age": 20 }
 		}
-		更新操作
+		更新操作（如果执行两次重复的更新，第二次会不执行，同同时result为noop，）
+	POST test/_doc/1/_update
+		{
+		    "doc" : {
+		        "name" : "new_name"
+		    },
+		    "detect_noop": false
+		}
+		避免两次更新不执行的操作
+
 	POST /customer/_doc/1/_update?pretty
 		{
 		  "script" : "ctx._source.age += 5"
@@ -108,3 +117,72 @@ Elasticsearch
 	}
 
 	https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
+
+6、配置文件
+	elasticsearch.yml for configuring Elasticsearch
+	jvm.options for configuring Elasticsearch JVM settings
+	log4j2.properties for configuring Elasticsearch logging
+
+7、更多操作
+	_delete_by_query 根据查询条件进行删除
+	POST twitter/_delete_by_query
+		{
+		  "query": { 
+		    "match": {
+		      "message": "some message"
+		    }
+		  }
+		}
+
+	使用脚本进行更新
+	POST test/_doc/1/_update
+	{
+	    "script" : {
+	        "source": "ctx._source.counter += params.count",
+	        "lang": "painless",
+	        "params" : {
+	            "count" : 4
+	        }
+	    }
+	}
+
+	POST test/_doc/1/_update
+		{
+		    "script" : {
+		        "source": "ctx._source.counter += params.count",
+		        "lang": "painless",
+		        "params" : {
+		            "count" : 4
+		        }
+		    },
+		    "upsert" : {
+		        "counter" : 1
+		    }
+		}
+		upsert：存在更新，不存在即插入
+
+	POST sessions/session/dh3sgudg8gsrgl/_update
+	{
+	    "scripted_upsert":true,
+	    "script" : {
+	        "id": "my_web_session_summariser",
+	        "params" : {
+	            "pageViewEvent" : {
+	                "url":"foo.com/bar",
+	                "response":404,
+	                "time":"2014-01-01 12:32"
+	            }
+	        }
+	    },
+	    "upsert" : {}
+	}
+	更新script
+
+	POST test/_doc/1/_update
+	{
+	    "doc" : {
+	        "name" : "new_name"
+	    },
+	    "doc_as_upsert" : true
+	}
+	更新doc
