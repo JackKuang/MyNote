@@ -1,0 +1,110 @@
+Elasticsearch
+一、介绍
+	a highly scalable open-source full-text search and analytics engine。
+	store, search, and analyze big volumes of data quickly and in near real time. 
+	1、搜索引擎、电商搜索，Github、stackoverflow、维基百科
+	2、日志采集分析，结合LogStash
+	3、提醒消息推送，比价网站
+	4、数据可可视化分析，结合Kibana
+二、概念
+	Cluster（集群）
+		you could use logging-dev, logging-stage, and logging-prod for the development, staging, and production clusters.
+	Node（节点）
+		修改配置文件中的名字就可以了，节点之间自动发现和配置。
+	Index（索引）
+		类似于分组的概念
+	Type
+		Index下一级别分组。6.0版本移除。
+	Doucment（文档）
+		单元，Json对象。
+	Shard（碎片）
+		索引内容太大，效率慢。将索引碎片化。
+	Replicas（副本
+		高可用，类似于备份。同时，副本也可以正常工作。
+	By default, each index in Elasticsearch is allocated 5 primary shards and 1 replica which means that if you have at least two nodes in your cluster,
+	your index will have 5 primary shards and another 5 replica shards (1 complete replica) for a total of 10 shards per index.
+三、安装
+	JDK 1.8
+	启动额外命令
+	./elasticsearch -Ecluster.name=my_cluster_name -Enode.name=my_node_name
+四、使用
+	REST API
+	端口：9200（请求）、9300
+	GET /_cat/health?v 服务健康状况
+		Green - everything is good (cluster is fully functional)
+		Yellow - all data is available but some replicas are not yet allocated (cluster is fully functional)
+		Red - some data is not available for whatever reason (cluster is partially functional)
+	GET /_cat/nodes?v 节点状况
+	GET /_cat/indices?v 索引状况
+
+	PUT /customer?pretty 创建名为"customr"的索引
+
+	PUT /customer/_doc/1?pretty
+		{
+		  "name": "John Doe"
+		}
+		往索引中增加数据(ID为1)
+
+	GET /customer/_doc/1?pretty /index/type/id 取数据（pretty格式化界面）
+
+	DELETE /customer?pretty 删除名为"customer"的索引
+
+	POST /customer/_doc?pretty
+		{
+		  "name": "Jane Doe"
+		}
+		创建未指定ID的数据
+
+	POST /customer/_doc/1/_update?pretty
+		{
+		  "doc": { "name": "Jane Doe", "age": 20 }
+		}
+		更新操作
+	POST /customer/_doc/1/_update?pretty
+		{
+		  "script" : "ctx._source.age += 5"
+		}
+		对比一下两个更新操作
+
+	DELETE /customer/_doc/2?pretty 删除操作
+
+	批量操作
+	POST /customer/_doc/_bulk?pretty
+		{"index":{"_id":"1"}}
+		{"name": "John Doe" }
+		{"index":{"_id":"2"}}
+		{"name": "Jane Doe" }
+	POST /customer/_doc/_bulk?pretty
+		{"update":{"_id":"1"}}
+		{"doc": { "name": "John Doe becomes Jane Doe" } }
+		{"delete":{"_id":"2"}}
+
+
+五、查询（Query DSL(Domain Specific Language)）
+	上传实例(https://www.elastic.co/guide/en/elasticsearch/reference/current/_exploring_your_data.html)
+	curl -H "Content-Type: application/json" -XPOST "localhost:9200/bank/_doc/_bulk?pretty&refresh" --data-binary "@accounts.json"
+	curl "localhost:9200/_cat/indices?v"
+
+	GET /bank/_search?q=*&sort=account_number:asc&pretty
+		We are searching (_search endpoint) in the bank index,
+		and the q=* parameter instructs Elasticsearch to match all documents in the index.
+		The sort=account_number:asc parameter indicates to sort the results using the account_number field of each document in an ascending order. 
+
+	结果：
+		took – time in milliseconds for Elasticsearch to execute the search
+		timed_out – tells us if the search timed out or not
+		_shards – tells us how many shards were searched, as well as a count of the successful/failed searched shards
+		hits – search results
+		hits.total – total number of documents matching our search criteria
+		hits.hits – actual array of search results (defaults to first 10 documents)
+		hits.sort - sort key for results (missing if sorting by score)
+		hits._score and max_score - ignore these fields for now
+	查询 GET /bank/_search
+	{
+	  "query": { "match_all": {} },
+	  "sort": [
+	    { "account_number": "asc" }
+	  ]
+	}
+
+	https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
