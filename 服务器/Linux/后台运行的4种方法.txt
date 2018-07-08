@@ -1,0 +1,4 @@
+1.注册为服务启动
+2.nohup启动（nohangup启动）
+3.screen启动，需安装命令行支持。（screen暂时离开会话）
+4.daemontools软件支持
