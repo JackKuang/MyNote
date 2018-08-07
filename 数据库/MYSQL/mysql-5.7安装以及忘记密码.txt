@@ -46,3 +46,13 @@ update mysql.user set authentication_string=password('123456') where user='root'
 10.启动myqsl服务。
 
 提示密码过期，cmd登陆后执行“SET PASSWORD = PASSWORD('123456');”
+
+
+-----MYSQL 8.0 navicat 无法连接
+原因：MySQL8.0版本的加密方式和MySQL5.0的不一样，连接会报错。
+1.更改加密方式：
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'password' PASSWORD EXPIRE NEVER;
+2.更改密码：
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';
+3.刷新：
+ FLUSH PRIVILEGES;
