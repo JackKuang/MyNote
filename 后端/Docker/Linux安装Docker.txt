@@ -1,0 +1,37 @@
+安装Docker
+sudo yum update
+sudo yum install docker
+镜像检索
+docker search [redis]
+镜像下载
+docker pull [redis]
+镜像列表
+docker images
+删除镜像
+docker rmi [IAMGE_ID]
+
+运行一个容器
+docker run --name [container-name] -d [image-name]
+docker run --name [test-redis] -d [redis]
+容器列表
+docker ps
+停止容器
+docker stop [container-name]/[container-id]
+启动容器
+docker start [container-name]/[container-id]
+删除容器
+docker rm [container-id]
+查看容器日志
+docker logs [container-id]
+
+端口映射启动
+docker run -d -p 6379:6379 --name port-redis redis
+
+登陆容器
+docker exec -it [container-name]/[container-id] bash
+
+
+yum -y update
+升级所有包同时也升级软件和系统内核
+yum -y upgrade
+只升级所有包，不升级软件和系统内核

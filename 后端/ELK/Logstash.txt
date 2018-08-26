@@ -1,0 +1,3 @@
+1.启动报错：“找不到或无法加载主类”
+	环境变量路径错误，修改logstash.bat，55行，%JAVA% %JAVA_OPTS% -cp "%CLASSPATH%" org.logstash.Logstash %*
+2.
