@@ -5,6 +5,9 @@
 # 创建证书库(keystore)及证书(Certificate)
 命令如下：
 ```
+keytool -genkey -alias cms.hurenjieee.com -keyalg RSA –keysize 4096  -keypass password -sigalg SHA256withRSA -dname "cn=Jack,ou=hurenjieee,o=hurenjieee,l=Hangzhou,st=Zhejiang,c=CN" -storetype JKS -storepass password -keystore E:/.keystore
+```
+```
 keytool -genkeypair \
         -alias www.mydomain.com \
         -keyalg RSA \
@@ -31,7 +34,7 @@ keytool -genkeypair \
 - -validity 3650 此处”3650“为证书有效期天数。
 - -keystore www.mydomain.com_keystore.jks 此处”www.mydomain.com_keystore.jks“为密钥库的名称。此处也给出绝对路径。默认在当前目录创建证书库。
 - -storetype JKS 此处”JKS “为证书库类型。可用的证书库类型为：JKS、PKCS12等。jdk9以前，默认为JKS。自jdk9开始，默认为PKCS12。
--storepass mypassword 此处”mypassword “为证书库密码(私钥的密码)。最好与keypass 一致。
+- storepass mypassword 此处”mypassword “为证书库密码(私钥的密码)。最好与keypass 一致。
 说明： 
 - 上述命令，需要将 -dname 参数替换（尤其时域名要写对）、密码更改即可，其它可保持不变
 # 生成证书签名请求(CSR)
