@@ -22,10 +22,11 @@ default-storage-engine=INNODB
 3.管理员运行cmd，执行以下目录
 
 mysql安装
-mysql install
+
+mysqld install
 
 mysqld --initialize --user=mysql --console
-记住密码
+这一步为了将密码在命令行显示，如果没有需要到data目录下的*.err查看
 
 mysqld --install MySQL
 
