@@ -31,3 +31,6 @@
 　　mysql> UPDATE user SET password=PASSWORD("123456") WHERE user='root';
 
 　　mysql> FLUSH PRIVILEGES;
+
+mysql 8 第一次调用修改密码：
+ALTER user 'root'@'localhost' IDENTIFIED BY '123456';
