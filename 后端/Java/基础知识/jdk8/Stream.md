@@ -69,7 +69,24 @@ Stream 使用一种类似用 SQL 语句从数据库查询数据的直观方式�
     // 类型转换
     studentStream.map(s -> s.name).forEach(System.out::println);
     ```
-
+    `flatMap`:
+    
+    ```java
+    // map是一对一映射
+    // flatMap是将2维的集合映射成一维
+    List<String> list = Arrays.asList("beijing changcheng", "beijing gugong", "beijing tiantan", "gugong tiananmen");
+    //map只能将分割结果转成一个List,所以输出为list对象
+    list.stream().map(item -> Arrays.stream(item.split(" "))).forEach(System.out::println);
+    System.out.println("------------------------------------");
+    //如果我们想要每个list里的元素，还需要一层foreach
+    list.stream().map(item -> Arrays.stream(item.split(" "))).forEach(n-> {
+        n.forEach(System.out::println);
+    });
+    System.out.println("------------------------------------");
+    //flatmap可以将字符串分割成各自的list之后直接合并成一个List
+    //也就是flatmap可以将一个2维的集合转成1维度
+    list.stream().flatMap(item -> Arrays.stream(item.split(" "))).forEach(System.out::println);
+    ```
     
 4. `sorted`：将流中的元素按照自然排序方式进行排序，sorted(Comparator<? super T> comparator)可以指定排序的方式。对于有序流，排序是稳定的。对于非有序流，不保证排序稳定。
     ```java
@@ -181,6 +198,3 @@ Stream 使用一种类似用 SQL 语句从数据库查询数据的直观方式�
     listStream.forEach(System.out::println);
     //输出 one two three
 ```
-
-
-
