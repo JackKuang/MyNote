@@ -112,4 +112,102 @@ Container 和集群节点的关系是：一个节点会运行多个 Container，
 * 任务运行资源的集合（cpu、内存、io等）；
 * 任务运行环境
 
+### 5. Resource Request 及 Container
+
+- Yarn的设计目标就是允许我们的各种应用以共享、安全、多租户的形式使用整个集群。并且，为了保证集群资源调度和数据访问的高效性，Yarn还必须能够感知整个集群拓扑结构。
+
+- 为了实现这些目标，ResourceManager的调度器Scheduler为应用程序的资源请求定义了一些灵活的协议，通过它就可以对运行在集群中的各个应用做更好的调度，因此，这就诞生了Resource Request和Container。
+
+- 一个应用先向ApplicationMaster发送一个满足自己需求的资源请求，然后ApplicationMaster把这个资源请求以resource-request的形式发送给ResourceManager的Scheduler，Scheduler再在这个原始的resource-request中返回分配到的资源描述Container。
+
+- 每个ResourceRequest可看做一个可序列化Java对象，包含的字段信息如下：
+
+  ```xml
+  - resource-name：资源名称，现阶段指的是资源所在的host和rack，后期可能还会支持虚拟机或者更复杂的网络结构
+  - priority：资源的优先级
+  - resource-requirement：资源的具体需求，现阶段指内存和cpu需求的数量
+  - number-of-containers：满足需求的Container的集合
+  <resource-name, priority, resource-requirement, number-of-containers>
+  ```
+
+### 6. JobHistoryServer
+
+### 7. TimelineServer
+
+## Yarn运行原理
+
+### Yarn应用提交过程
+
+Applcation在Yarn中的执行过程，整个过程可以总结为三步：
+
+1. 应用程序提交
+2. 启动应用的ApplicationMaster实例
+3. ApplicationMaster实例管理应用程序的执行
+
+------
+
+1. 用户将应用程序提交到ResourceManager上
+2. ResourceManager为有应用程序ApplicationMaster申请资源，并与某个NodeManager通信启动i的一个Container，以启动ApplicationMaster。
+3. ApplicationMaster与ResourceManager注册进行通信，为内部要执行的任务申请资源，一旦得到资源后，将与NodeManager进行通信，已启动对应的Task
+4. 所有的任务运行完成之后，ApplicationMaster向ResourceManager注销，整个应用程序运行结束。
+
+------
+
+1. 客户端程序向 ResourceManager 提交应用并请求一个 ApplicationMaster 实例；
+2. ResourceManager 找到一个可以运行一个 Container 的 NodeManager，并在这个 Container 中启动 ApplicationMaster 实例；
+3. ApplicationMaster 向 ResourceManager 进行注册，注册之后客户端就可以查询 ResourceManager 获得自己 ApplicationMaster 的详细信息，以后就可以和自己的 ApplicationMaster 直接交互了（这个时候，客户端主动和 ApplicationMaster 交流，应用先向 ApplicationMaster 发送一个满足自己需求的资源请求）；
+4. 在平常的操作过程中，ApplicationMaster 根据 resource-request协议 向 ResourceManager 发送 resource-request请求；
+5. 当 Container 被成功分配后，ApplicationMaster 通过向 NodeManager 发送 container-launch-specification信息 来启动Container，container-launch-specification信息包含了能够让Container 和 ApplicationMaster 交流所需要的资料；
+6. 应用程序的代码以 task 形式在启动的 Container 中运行，并把运行的进度、状态等信息通过 application-specific协议 发送给ApplicationMaster；
+7. 在应用程序运行期间，提交应用的客户端主动和 ApplicationMaster 交流获得应用的运行状态、进度更新等信息，交流协议也是 application-specific协议；
+8. 一旦应用程序执行完成并且所有相关工作也已经完成，ApplicationMaster 向 ResourceManager 取消注册然后关闭，用到所有的 Container 也归还给系统。
+
+
+### MapReduce On Yarn
+
+### Yarn生命周期
+
+
+
+## Yarn 配置
+
+### 配置文件
+
+`etc/hadoop/mapred-site.xml`
+
+```
+<configuration>
+	<property>
+		<name>mapreduce.framework.name</name>
+		<value>yarn</value>
+	</property>
+</configuration>
+```
+
+`etc/hadoop/yarn-site.xml`
+
+```
+<configuration>
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+</configuration>
+```
+
+### 常用命令
+
+## 调度器
+
+### 调度器使用
+
+### FIFO Scheduler
+
+### Capacity Scheduler
+
+### Fair Schedler
+
+
+
+## Yarn调优
 
