@@ -165,8 +165,37 @@ Applcation在Yarn中的执行过程，整个过程可以总结为三步：
 
 ### MapReduce On Yarn
 
-### Yarn生命周期
+![mapReduceOnYarn.jpg](img/mapReduceOnYarn.jpg)
 
+
+
+1. 向Client端提交MapReduce job。
+2. 随后yarn的ResourceManager进行资源的分配。
+3. 由NodeManager进行加载和监控containers。
+4. 通过applicationMaster与ResourceManger进行资源的申请以及状态的交互，由NodeManager进行MapReduce运行时job的管理。
+5. 通过hdfs进行job配置文件、jar包的各节点分发。
+
+### Yarn应用生命周期
+
+1. Client向RM提交应用，包括AM程序和启动AM的命令。
+
+2. RM为AM分配第一个容器，并与对应的NM通信，令其在容器上启动应用的AM。
+
+3. AM启动时向RM注册，允许Client向RM获取AM信息然后直接和AM通信。
+
+4. AM通过资源请求协议，为应用协商容器资源。
+
+5. 如果容器分配成功，AM要求NM在容器中启动应用，应用启动后可以和AM独立通信。
+
+6. 应用程序在容器中执行，并向AM汇报。
+
+7. 在应用执行期间，Client和AM通信获取应用状态。
+
+8. 应用执行完成，AM向RM注销并关闭，释放资源。
+
+   申请资源-->启动AM->申请运行任务的Container-->分发Task-->运行Task-->Task结束-->回收Container
+
+   
 
 
 ## Yarn 配置
@@ -195,11 +224,40 @@ Applcation在Yarn中的执行过程，整个过程可以总结为三步：
 </configuration>
 ```
 
+### 启动停止
+
+```sh
+# 主节点运行
+$HADOOP_HOME/sbin/start-yarn.sh
+$HADOOP_HOME/sbin/stop-yarn.sh
+
+# 单独在主节点启动RM
+$HADOOP_HOME/sbin/yarn-daemon.sh start resourcemanager
+$HADOOP_HOME/sbin/start-yarn.sh stop resourcemanager
+
+# 单独在子节点启动RM
+$HADOOP_HOME/sbin/yarn-daemon.sh start nodemanager
+$HADOOP_HOME/sbin/start-yarn.sh stop nodemanager
+```
+
 ### 常用命令
 
-## 调度器
+```sh
+# 查看正在运行的任务
+yarn application -list
+# 杀掉正在运行的任务
+yarn application -kill 任务id
+# 查看节点列表
+yarn node -list
+# 查看节点状态
+yarn node -status node-id
+# 查看yarn依赖的jar的环境变量
+yarn classpath
+```
 
-### 调度器使用
+
+
+## 调度器
 
 ### FIFO Scheduler
 
