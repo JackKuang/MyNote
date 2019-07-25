@@ -1,4 +1,9 @@
-# Yarn
+Container的运行是由ApplicationMaster向资源所在的NodeManager发起的，Container运行时需提供内部执行的任务命令（可以使任何命令，比如java、Python、C++进程启动命令均可）以及该命令执行所需的环境变量和外部资源（比如词典文件、可执行文件、jar包等）。
+--------------------- 
+作者：Heaven-Wang 
+来源：CSDN 
+原文：https://blog.csdn.net/suifeng3051/article/details/45477773 
+版权声明：本文为博主原创文章，转载请附上博文链接！Yarn
 
 ![appliction_yarn](img/application_yarn.jpg)
 
@@ -261,11 +266,173 @@ yarn classpath
 
 ### FIFO Scheduler
 
+* FIFO Scheduler把应用按提交的顺序排成一个队列，First In First Out
+* FIFO Scheduler是最简单的调度器，不需要任何配置，但是它不适用于共享集群。大的应用可能会占用所有的集群资源，导致其他应用被阻塞
+
 ### Capacity Scheduler
 
-### Fair Schedler
+* Capacity调度器说的通俗点，可以理解成一个个的资源队列。这个资源队列是用户自己去分配的。比如我大体上把整个集群分成了AB两个队列，A队列给A项目组的人来使用。B队列给B项目组来使用。但是A项目组下面又有两个方向，那么还可以继续分，比如专门做BI的和做实时分析的。那么队列的分配就可以参考下面的树形结构：
+
+  ```
+  root
+  ------a[60%]
+        |---a.bi[40%]
+        |---a.realtime[60%]
+  ------b[40%]
+  ```
+
+  a队列占用整个资源的60%，b队列占用整个资源的40%。a队列里面又分了两个子队列，一样也是2:3分配。
+
+  虽然有了这样的资源分配，但是并不是说a提交了任务，它就只能使用60%的资源，那40%就空闲着。只要资源实在空闲状态，那么a就可以使用100%的资源。但是一旦b提交了任务，a就需要在释放资源后，把资源还给b队列，直到ab平衡在3:2的比例。
+
+  粗粒度上资源是按照上面的方式进行，在每个队列的内部，还是按照FIFO的原则来分配资源的。
+
+* 特性：
+  1. 层次化的队列设计，这种层次化的队列设计保证了子队列可以使用父队列设置的全部资源。这样通过层次化的管理，更容易合理分配和限制资源的使用。
+  2. 容量保证，队列上都会设置一个资源的占比，这样可以保证每个队列都不会占用整个集群的资源。
+  3. 安全，每个队列又严格的访问控制。用户只能向自己的队列里面提交任务，而且不能修改或者访问其他队列的任务。
+  4. 弹性分配，空闲的资源可以被分配给任何队列。当多个队列出现争用的时候，则会按照比例进行平衡。
+  5. 多租户租用，通过队列的容量限制，多个用户就可以共享同一个集群，同事保证每个队列分配到自己的容量，提高利用率。
+  6. 操作性，yarn支持动态修改调整容量、权限等的分配，可以在运行时直接修改。还提供给管理员界面，来显示当前的队列状况。管理员可以在运行时，添加一个队列；但是不能删除一个队列。管理员还可以在运行时暂停某个队列，这样可以保证当前的队列在执行过程中，集群不会接收其他的任务。如果一个队列被设置成了stopped，那么就不能向他或者子队列上提交任务了。
+  7. 基于资源的调度，协调不同资源需求的应用程序，比如内存、CPU、磁盘等等。
+* 配置`yarn-site.xml`，更改`yarn.resourcemanager.scheduler.class`的配置项为
+  `org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler`
+
+* 默认配置队列`capacity-scheduler.xml`
+
+  ```xml
+  <property>
+    <name>yarn.scheduler.capacity.root.queues</name>
+    <value>a,b,c</value>
+    <description>The queues at the this level (root is the root queue).
+    </description>
+  </property>
+  
+  <property>
+    <name>yarn.scheduler.capacity.root.a.queues</name>
+    <value>a1,a2</value>
+    <description>The queues at the this level (root is the root queue).
+    </description>
+  </property>
+  
+  <property>
+    <name>yarn.scheduler.capacity.root.b.queues</name>
+    <value>b1,b2,b3</value>
+    <description>The queues at the this level (root is the root queue).
+    </description>
+  </property>
+  ```
+
+* 队列数属性和配置
+
+  建议查看官方文档：https://hadoop.apache.org/docs/r3.1.1/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html
+
+* 运行时修改，修改配置文件之后执行脚本
+
+  ```
+  $HADOOP_YARN_HOME/bin/yarn rmadmin -refreshQueues
+  ```
+
+  注意：
+
+  * 队列不能被删除，只能新增。
+  * 更新队列的配置需要是有效的值。
+  * 同层级的队列容量限制想加需要等于100%。
+
+### Fair Scheduler
+
+* Fair调度器不需要预先占用一定的系统资源，Fair调度器会为所有运行的job动态的调整系统资源。
+
+- 如下图中，从第二个任务提交到获取资源会有一定的延迟，因为它需要等第一个任务释放占用的container。小任务执行完成之后也会释放自己占用的资源，大任务又获得了全部的系统资源。
+- 最终的效果就是Fair调度器得到了搞得资源利用率又能保证小任务及时完成。
+
+![img\scheduler.png](img/fairScheduler.png)
+
+### 三个调度器区分
+
+![img\scheduler.png](/img/scheduler.png)
 
 
 
 ## Yarn调优
+
+### RM配置——资源调度相关
+
+
+​	RM1：yarn.scheduler.minimum-allocation-mb 分配给AM单个容器可申请的最小内存
+
+​	RM2：yarn.scheduler.maximum-allocation-mb 分配给AM单个容器可申请的最大内存
+
+​		|最小值可以计算一个节点最大Container数量
+
+​		| 一旦设置，不可动态改变
+
+### NM配置——硬件资源相关
+
+​	NM1：yarn.nodemanager.resource.memory-mb 节点最大可用内存
+
+​	NM2：yarn.nodemanager.vmem-pmem-ratio 虚拟内存率，默认2.1
+
+​		l RM1、RM2的值均不能大于NM1的值
+
+​		l NM1可以计算节点最大最大Container数量，max(Container)=NM1/RM2
+
+​		l 一旦设置，不可动态改变
+
+### AM配置——任务相关
+
+​	AM1：mapreduce.map.memory.mb 分配给map Container的内存大小
+
+​	AM2：mapreduce.reduce.memory.mb 分配给reduce Container的内存大小
+
+​		l 这两个值应该在RM1和RM2这两个值之间
+
+​		l AM2的值最好为AM1的两倍
+
+​		l 这两个值可以在启动时改变
+
+​	AM3：mapreduce.map.java.opts 运行map任务的jvm参数，如-Xmx，-Xms等选项
+
+​	AM4：mapreduce.reduce.java.opts 运行reduce任务的jvm参数，如-Xmx，-Xms等选项
+
+​		|这两个值应该在AM1和AM2之间
+
+![yarnImprove](img/yarnImprove.jpg)
+
+AM参数mapreduce.map.memory.mb=1536MB，表示AM要为map Container申请1536MB资源，但RM实际分配的内存却是2048MB，因为yarn.scheduler.mininum-allocation-mb=1024MB，这定义了RM最小要分配1024MB，1536MB超过了这个值，所以实际分配给AM的值为2048MB(这涉及到了规整化因子，关于规整化因子，在本文最后有介绍)。
+
+AM参数mapreduce.map.java.opts=-Xmx 1024m，表示运行map任务的jvm内存为1024MB,因为map任务要运行在Container里面，所以这个参数的值略微小于mapreduce.map.memory.mb=1536MB这个值。
+
+NM参数yarn.nodemanager.vmem-pmem-radio=2.1,这表示NodeManager可以分配给map/reduce Container 2.1倍的虚拟内存，安照上面的配置，实际分配给map Container容器的虚拟内存大小为2048*2.1=3225.6MB，若实际用到的内存超过这个值，NM就会kill掉这个map Container,任务执行过程就会出现异常。
+
+AM参数mapreduce.reduce.memory.mb=3072MB，表示分配给reduce Container的容器大小为3072MB,而map Container的大小分配的是1536MB，从这也看出，reduce Container容器的大小最好是map Container大小的两倍。
+
+NM参数yarn.nodemanager.resource.mem.mb=24576MB,这个值表示节点分配给NodeManager的可用内存，也就是节点用来执行yarn任务的内存大小。这个值要根据实际服务器内存大小来配置，比如我们hadoop集群机器内存是128GB，我们可以分配其中的80%给yarn，也就是102GB。
+
+上图中RM的两个参数分别1024MB和8192MB，分别表示分配给AM map/reduce Container的最大值和最小值。
+
+yarn分配内存挺难的。
+
+[参考链接](https://blog.csdn.net/suifeng3051/article/details/45477773)
+
+
+
+## 关于Container
+
+1. Container是YARN中资源的抽象，它封装了某个节点上一定量的资源（CPU和内存两类资源）。它跟Linux Container没有任何关系，仅仅是YARN提出的一个概念（从实现上看，可看做一个可序列化/反序列化的Java类）。
+
+2.  Container由ApplicationMaster向ResourceManager申请的，由ResouceManager中的资源调度器异步分配给ApplicationMaster；
+
+3. Container的运行是由ApplicationMaster向资源所在的NodeManager发起的，Container运行时需提供内部执行的任务命令（可以使任何命令，比如java、Python、C++进程启动命令均可）以及该命令执行所需的环境变量和外部资源（比如词典文件、可执行文件、jar包等）。
+
+   另外，一个应用程序所需的Container分为两大类，如下：
+
+   1. 运行行ApplicationMaster的Container：这是由ResourceManager（向内部的资源调度器）申请和启动的，用户提交应用程序时，可指定唯一的ApplicationMaster所需的资源；
+   2. 运行各类任务的Container：这是由ApplicationMaster向ResourceManager申请的，并由ApplicationMaster与NodeManager通信以启动之。
+
+   以上两类Container可能在任意节点上，它们的位置通常而言是随机的，即ApplicationMaster可能与它管理的任务运行在一个节点上。
+
+   如下图，map/reduce task是运行在Container之中的，所以上面提到的mapreduce.map(reduce).memory.mb大小都大于mapreduce.map(reduce).java.opts值的大小。
+
+   ![container](img/container.png)
 
