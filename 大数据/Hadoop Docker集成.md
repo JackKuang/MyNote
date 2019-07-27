@@ -78,7 +78,7 @@ work:node5,ip:172.17.0.5
     基于上一步创建的jdk8，增加hadoop环境，并初始化hdfs
 
 4. 修改Hadoop配置文件
-    
+   
     解压hadoop
     
     修改以下`etc/hadoop`目录下的一下配置文件，示例配置文件在本文件`Dockerfile/hadoop3.1.2/etc/hadoop`路径下
@@ -172,7 +172,7 @@ work:node5,ip:172.17.0.5
         <!-- Site specific YARN configuration properties -->
         <property>   
             <name>yarn.resourcemanager.hostname</name>
-            <value>ndoe1</value> 
+            <value>node1</value> 
         </property>
         <property>
             <name>yarn.nodemanager.aux-services</name>
@@ -261,6 +261,8 @@ work:node5,ip:172.17.0.5
     3. 需要根据实际接口控制各节点的端口映射（docker）
 
 7. 启动Docker集群
+   
+    `hdfs namenode -format`格式化
     
     进入`node1`节点，进入`$HADOOP_HOME/sbin`，启动`start-all.sh`，注意官方不建议执行`start-all.sh`。
     进入`node2`、`node3`节点，调用jps命令，查看java进程
