@@ -2,8 +2,12 @@
 
 HADOOP分三个模块组成：
 1. 分布式存储 HDFS
+
 2. 分布式计算 MapReduce
+
 3. 资源调度引擎 Yarn
+
+   ![](img/hadoop.png)
 
 
 ## HDFS(Hadoop Distributed File SystemHadoop分布式文件系统)
@@ -19,12 +23,16 @@ HADOOP分三个模块组成：
 
 1. HDFS block块
     * 在HDFS3.X的文件系统中，文件默认时按照`128M`为一个单位，切分成一个个block，分散的数存储在集群的不同的数据节点上`datanode`。
-    * 数据元
-
+    
+  ![hadoop——block](img/hadoop_block.png)
+    
 2. block副本
     * replication = 3 (默认副本是有三个的)
-    * 可通过修改`hdfs-default.xml`中的`dfs.replication`配置来调整数量
-
+    
+* 可通过修改`hdfs-default.xml`中的`dfs.replication`配置来调整数量
+    
+      ![hadoop——block](img/hadoop_block_rep.png)]
+    
 3. 机架副本存放策略
     1. 第一个副本在client所处的节点上。如果客户端在集群外，随机选一个。
     2. 第二个副本在和第一个副本不同机架的随机节点上
@@ -52,18 +60,22 @@ HADOOP分三个模块组成：
 
 ## HDFS架构图
 
-HDFS 是主从架构 Master/Slave、管理节点/工作节点
+HDFS 是主从架构 Master/！Slave、管理节点/工作节点
+
+​	![](img/hadoop_system.png)
 
 1. NameNode
-    * 管理节点，负责关键文件系统和命名系空间，存放了HDSFS的原数组（在内存中）。
-    * 元数据信息包括我呢见系统树、整个文件树的所有目录和文件、每个文件的块列表、块所在的DataNode等。
-    * 元数据信息以命名空寂爱你镜像文件（fsimage）和编辑日志（edits log）的方式保存
+    * 管理节点，负责关键文件系统和命名系空间，存放了HDSFS的元数据（在内存中）。
+    * 元数据信息：包括文件系统树、所有目录和文件、每个文件的块列表、块所在的DataNode等。
+    * 文件、block、目录占用大概**150Byte字节的元数据**；所以HDFS适合存储大文件，不适合存储小文件
+    * 元数据信息以命名空间镜像文件**fsimage**和编辑日志（**edits log**）的方式保存
         * fsimage:元数据镜像文件，保存了文件系统目录书信息以及文件和块的对应关系
         * 日志文件，保存文件系统的更改记录
     
 2. DataNode
-    * 存储block，以及bloc元数据包括数据块的长度、块数据的校验和、时间戳
-
+    
+* 存储block，以及bloc元数据包括数据块的长度、块数据的校验和、时间戳
+    
 3. SecondaryNameNode（辅助NameNode）
     * 定期将编辑日志和元数据信息合并，防止编辑日志文件过大，并且能保证其信息与namenode信息保持一致。
     * SN一般在另一台单独的物理计算机上运行，因为它需要占用大量CPU时间来与namenode进行合并操作，一般情况是单独开一个线程来执行操作过程
@@ -77,29 +89,36 @@ HDFS 是主从架构 Master/Slave、管理节点/工作节点
 ## HDFS四大机制
 
 1. 心跳机制
+   
+    ![heartbeat](img\heartbeat.png)
     
-    原理
-    1. Master启动之后，会启动一个Ipc Server。
+    **原理：**
+    
+1. Master启动之后，会启动一个Ipc Server。
     2. Salve启动，连接Master，每隔3秒钟向Master发送一个心跳指令，携带这状态信息
     3. Master通过这个心跳的返回值，想Salve节点传达指令
 
-    作用
-    1. NameNode 全权管理数据块的复制，它周期性地从集群中的每个DataNode节点接受心跳信号和块状态报告（BlockReport）。接受到心跳信号以为这该DataNode节点工作正常。块转台报告包含了一个该DataNode上所有数据块的列表。
+    **作用：**
 
-    2.DataNode启动后想NameNode注册，，通过后，周期性（1小时）的向NameNode上报所有的块的列表；每3秒向NameNode发送一次心跳，返回NameNode给该DataNode的命令：如复制数据到另一台机器或删除某个数据块。如果NameNode超过10分钟没有收到某个DataNode的心跳，则认为该节点不可用
-
+   1. NameNode 全权管理数据块的复制，它周期性地从集群中的每个DataNode节点接受心跳信号和块状态报告（BlockReport）。接受到心跳信号以为这该DataNode节点工作正常。块转台报告包含了一个该DataNode上所有数据块的列表。
+   
+   2. DataNode启动后想NameNode注册，，通过后，周期性（1小时）的向NameNode上报所有的块的列表；每3秒向NameNode发送一次心跳，返回NameNode给该DataNode的命令：如复制数据到另一台机器或删除某个数据块。如果NameNode超过10分钟没有收到某个DataNode的心跳，则认为该节点不可用。
+   3. hadoop集群刚开始启动时，会进入安全模式（99.9%），就用到了心跳机制
+   
 2. 负载均衡
 
     * 当集群内新增、删除节点，或者某个节点机器内硬盘存储达到饱和值。导致非常的容易出现机器磁盘利用率不一致的问题。
     * 需要迁移数据到不同的节点。
-    * `可以详细理解一下这个过程`
     * 当机器负载差距超过10%的时候，负载均衡开始调整
     ```bash
     $HADOOP_HOME/sbin/start-balancer.sh -t 10%
     ```
 
+3. HDFS  安全模式
+4. 副本存放策略
+
 ## HDFS 读写流程
-    
+
 特点
 * 能够运行在廉价机器上，硬件出错常态，需要具备高容错性
 * 流式数据访问，而不是随机读写
@@ -115,11 +134,11 @@ HDFS 是主从架构 Master/Slave、管理节点/工作节点
 单位
 
 * block
-    
+  
     文件上传前需要分块，这个块就是block，一般为128MB，当然你可以去改，不顾不推荐。因为块太小：寻址时间占比过高。块太大：Map任务数太少，作业执行速度变慢。它是最大的一个单位。
 
 * packet
-    
+  
     packet是第二大的单位，它是client端向DataNode，或DataNode的PipLine之间传数据的基本单位，默认64KB。
 
 * chunk
@@ -157,10 +176,18 @@ QA
 
 `可了解下Hadoop下data文件夹下内容`
 
+### Hadoop HA高可用
 
-### Hadoop高可用
+​	![](img\hadoop_ha.png)
 
 ### Hadoop联邦
+
+- 集群的元数据保存在namenode内存中
+- 每个文件、目录、block占用约150字节
+- 对于一个拥有大量文件的超大集群来说，内存将成为限制系统横向扩展的瓶颈。
+- 共享内存
+
+![](img/hadoop_union.png)
 
 ### Hadoop存储小文件
 1. HAR文件方案

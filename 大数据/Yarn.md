@@ -1,9 +1,4 @@
-Container的运行是由ApplicationMaster向资源所在的NodeManager发起的，Container运行时需提供内部执行的任务命令（可以使任何命令，比如java、Python、C++进程启动命令均可）以及该命令执行所需的环境变量和外部资源（比如词典文件、可执行文件、jar包等）。
---------------------- 
-作者：Heaven-Wang 
-来源：CSDN 
-原文：https://blog.csdn.net/suifeng3051/article/details/45477773 
-版权声明：本文为博主原创文章，转载请附上博文链接！Yarn
+# Yarn
 
 ![appliction_yarn](img/application_yarn.jpg)
 
@@ -435,4 +430,3 @@ yarn分配内存挺难的。
    如下图，map/reduce task是运行在Container之中的，所以上面提到的mapreduce.map(reduce).memory.mb大小都大于mapreduce.map(reduce).java.opts值的大小。
 
    ![container](img/container.png)
-
