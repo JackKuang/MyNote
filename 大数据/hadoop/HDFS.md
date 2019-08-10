@@ -24,15 +24,15 @@ HADOOP分三个模块组成：
 1. HDFS block块
     * 在HDFS3.X的文件系统中，文件默认时按照`128M`为一个单位，切分成一个个block，分散的数存储在集群的不同的数据节点上`datanode`。
     
+
   ![hadoop——block](img/hadoop_block.png)
     
 2. block副本
     * replication = 3 (默认副本是有三个的)
     
 * 可通过修改`hdfs-default.xml`中的`dfs.replication`配置来调整数量
-    
-      ![hadoop——block](img/hadoop_block_rep.png)]
-    
+  
+  ![hadoop——block](img/hadoop_block_rep.png)
 3. 机架副本存放策略
     1. 第一个副本在client所处的节点上。如果客户端在集群外，随机选一个。
     2. 第二个副本在和第一个副本不同机架的随机节点上
@@ -73,9 +73,9 @@ HDFS 是主从架构 Master/！Slave、管理节点/工作节点
         * 日志文件，保存文件系统的更改记录
     
 2. DataNode
-    
+   
 * 存储block，以及bloc元数据包括数据块的长度、块数据的校验和、时间戳
-    
+  
 3. SecondaryNameNode（辅助NameNode）
     * 定期将编辑日志和元数据信息合并，防止编辑日志文件过大，并且能保证其信息与namenode信息保持一致。
     * SN一般在另一台单独的物理计算机上运行，因为它需要占用大量CPU时间来与namenode进行合并操作，一般情况是单独开一个线程来执行操作过程
@@ -156,7 +156,7 @@ HDFS 是主从架构 Master/！Slave、管理节点/工作节点
 2. 检查是否已存在文件、检查权限。若通过检查，直接先将操作写入EditLog，并返回输出流对象。（（注：WAL，write ahead log，先写Log，再写内存，因为EditLog记录的是最新的HDFS客户端执行所有的写操作。如果后续真实写操作失败了，由于在真实写操作之前，操作就被写入EditLog中了，故EditLog中仍会有记录，我们不用担心后续client读不到相应的数据块，因为在第5步中DataNode收到块后会有一返回确认信息，若没写成功，发送端没收到确认信息，会一直重试，直到成功）
 3. client端按128MB的块切分文件
 4. client将NameNode返回的分配的可写的DataNode列表和Data数据一同发送给最近的第一个DataNode节点，此后client端和NameNode分配的多个DataNode构成pipeline管道，client端向输出流对象中写数据。client每向第一个DataNode写入一个packet，这个packet便会直接在pipeline里传给第二个、第三个…DataNode。
-5. 每个DataNode写完一个块后，会返回确认信息。 （并不是每写完一个packet后就返回确认信息，个人觉得因为packet中的每个chunk都携带校验信息，没必要每写一个就汇报一下，这样效率太慢。正确的做法是写完一个block块后，对校验信息进行汇总分析，就能得出是否有块写错的情况发生）
+5. 每个DataNode写完一个块后，会返回确认信息。 
 6. 写完数据，关闭输输出流。
 7. 发送完成信号给NameNode。 
 （注：发送完成信号的时机取决于集群是强一致性还是最终一致性，强一致性则需要所有DataNode写完后才向NameNode汇报。最终一致性则其中任意一个DataNode写完后就能单独向NameNode汇报，HDFS一般情况下都是强调强一致性）
@@ -164,10 +164,10 @@ HDFS 是主从架构 Master/！Slave、管理节点/工作节点
 读文件
 
 ![read](img/read.png)
-1. client访问NameNode，查询元数据信息，获得这个文件的数据块位置列表，返回输入流对象。
-2. 就近挑选一台datanode服务器，请求建立输入流。
-3. DataNode向输入流中中写数据，以packet为单位来校验。
-4. 关闭输入流
+1. 客户端与NameNode通讯获取文件的块位置信息，其中包括了块的所有冗余备份的位置信息：DataNode的列表；
+2. 客户端获取文件位置信息后直接同有文件块的DataNode通讯，读取文件
+3. 如果第一个DataNode无法连接，客户端将自动联系下一个DataNode
+4. 如果块数据的校验值出错，则客户端需要向NameNode报告，并联系下一个NameNode
 
 QA
 
@@ -191,5 +191,7 @@ QA
 
 ### Hadoop存储小文件
 1. HAR文件方案
-
 2. SequenceFile方案
+   1. NONE：不压缩
+   2. RECORD：每条记录对value进行一次压缩
+   3. BLOCK：   块压缩，当缓存的key和value字节大小达到指定的阈值，则进行压缩，阈值由配置项io.seqfile.compress.blocksize指定，默认值为1000000字节

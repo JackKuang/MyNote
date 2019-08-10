@@ -5,17 +5,17 @@
     * 单一复杂的任务，单台服务器无法计算，可以将大任务分别拆一个个小任务，小任务分别在不同的服务器上并行执行，最后在汇总每个小任务的结果
     * MapReduce分为两个阶段：Map（切分成一个个小的任务）、Reduce（汇总任务的结果）
 
-    ![mapreduce1](D:\WorkSpace\MyNote\大数据\img\mapreduce1.png)
+    ![mapreduce1](img\mapreduce1.png)
     
 1. Map阶段
-    
+   
 * map()函数以kv对作为输入，产生一系列kv对作为中间输出写入HDFS
-    
+  
 2. Reduce阶段
-    
+   
     * reduce()函数通过网络将mapd的输出(kv对)组为输入，产生另外一个kv作为最终结果写HDFS
     
-    ![mapreduce2](D:\WorkSpace\MyNote\大数据\img\mapreduce2.png)
+    ![mapreduce2](img\mapreduce2.png)
 
 ## Combiner
 * Map端本地聚合，相当也执行一遍Reduce操作。
@@ -39,7 +39,7 @@
     * 自定义Partitioner进行分区操作
     * 默认为HashPartitioner
 2. 写入环形内存缓冲区
-    
+   
     * 每个Map任务都会分配一个100M的环形内存缓存区，用于存储map任务输出的键值对以及对应的partition。
 3. 执行溢出写
     * 环形内存缓冲区到达阈值之后（80%），会锁定这部分内存，并在每个分区中对其中的键值进行排序，根据partition和key两个关键字排序。
@@ -91,11 +91,11 @@
     2. Reduce端的数据倾斜来源常常来源于MapReduce的默认分区器
 
 * 如何判断发生数据倾斜
-    
+  
 1. 在reduce阶段，关注数据，设定一个阈值（判断迭代器大小），一旦超过这个阈值，就可以观察到该数据。只能判断，需要跑代码多次尝试。
-    
+   
 * **解决方案**
-    
+  
     1. 自定义分区
     
        基于输出键的背景知识进行自定义分区。例如，如果map输出键的单词来源于一本书。其中大部分必然是省略词（stopword）。那么就可以将自定义分区将这部分省略词发送给固定的一部分reduce实例。而将其他的都发送给剩余的reduce实例。

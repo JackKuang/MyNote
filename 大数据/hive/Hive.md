@@ -171,11 +171,9 @@ create table complex(
 )
 ```
 
-### 5. Hive数据转换
+## 5. Hive数据转换
 
-### 5.1 隐式类型转换
-
-* 自动类型转换
+* 隐式类型转换
   * tinyint可以转换成int，int可以转换成bigint。
   * 所有整数类型、float 和 string类型都可以隐式地转换成double
   * tinyint、smallint、int都可以转换为float
