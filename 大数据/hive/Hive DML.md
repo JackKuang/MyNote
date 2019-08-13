@@ -2,9 +2,92 @@
 
 ## 一、Hive分区表
 
-## 二、HIve修改表结构
+### 1. 分区表创建
 
-## 三、HIve数据导入
+#### 1.1 分区表概念
+
+​	在文件系统上建立文件夹，把表的数据放在不同文件夹下面，加快查询速度。
+
+​	大表分区分为多个，确定查询范围。增加查询速度。
+
+#### 1.2 分区表状态
+
+  * 一个字段的分区表
+
+    ```sql
+    create table student_partition1(
+    id int, 
+    name string, 
+    age int)
+    partitioned by (dt string)
+    row format delimited fields terminated by '\t'; 
+    -------
+    partitioned by (dt string)
+    -------
+    ```
+
+* 两个字段的分区表
+
+  ```sql
+  create table student_partition2(
+  id int, 
+  name string, 
+  age int)
+  partitioned by (month string, day string)
+  row format delimited fields terminated by '\t'; 
+  ----------------------------
+  partitioned by (month string, day string)
+  ----------------------------
+  ```
+
+## 二、Hive修改表结构
+
+### 2.1 修改表名称
+
+```sql
+alter table table_name1 rename to table_name2;
+```
+
+### 2.2 查看表结构信息
+
+```sql
+desc student_partition3;
+desc formatted student_partition3;
+```
+
+###  2.3 增加/修改/替换列信息
+
+```sql
+-- 增加列
+alter table student_par add columns(col string);
+-- 修改列
+alter table student_par change columns old_col new_col int;
+-- 替换列
+alter table student_par replace cloumns(eid INT empid Int)
+-- 删除列
+alter table student_par replace cloumns(col1 string,col2 string)
+```
+
+### 2.4 增加/删除/查看分区
+
+```sql
+-- 添加单个分区
+alter table student_partition1 add partition(dt='20170601') ;
+ 
+-- 添加多个分区
+alter table student_partition1 add partition(dt='20170602') partition(dt='20170603'); 
+-- 删除分区
+alter table student_partition1 drop partition (dt='20170601');
+alter table student_partition1 drop partition (dt='20170602'),partition (dt='20170603');
+```
+
+```sql
+show partitions table_name
+```
+
+
+
+## 三、Hive数据导入
 
 ### 1. 向表中加载数据**load**
 
@@ -71,7 +154,7 @@ select * from student;
 ```sql
 -- 本地
 insert overwrite local directory '/opt/bigdata/export/student'
-row forma
+row format
 delimited fields terminated by  ','
 select * from student;
 ```
@@ -226,7 +309,7 @@ hdfs dfs -get /user/hive/warehouse/student/student.txt /opt/bigdata/data
 * 作用
 
   1. 取样sampling更高效。没有分区的话需要扫描整个数据集。
-  2. 提升某些查询操作效率，例如map side join
+  2. 提升某些查询操作效率，例如map、side、join
 
 * 示例
 
