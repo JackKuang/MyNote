@@ -184,6 +184,16 @@ hdfs dfs -get /user/hive/warehouse/student/student.txt /opt/bigdata/data
   -- >是覆盖，>>是追加
   ```
 
+### 4.在HDFS上，导入导出操作**export、import**
+
+```sql
+create table student2 like student1;
+export table student1  to   '/export/student1';
+import table student2  from '/export/student1';
+```
+
+## 四、Hive数据导出
+
 ## 五、静态分区与动态分区
 
 ### 1.静态分区
