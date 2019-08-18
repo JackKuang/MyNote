@@ -192,9 +192,25 @@ export table student1  to   '/export/student1';
 import table student2  from '/export/student1';
 ```
 
-## 四、Hive数据导出
+##  五、文件上传HDFS，如何数据关联
 
-## 五、静态分区与动态分区
+1. 上传数据后修复液
+
+   dfs -mkdir -p 分区表名
+
+   dfs -put 分区目录
+
+   msck repair table 表名
+
+2. 上传数据后添加分区
+
+   dfs -mkdir -p 分区表名
+
+   dfs -put 分区目录
+
+   alter table 表明 add partition();
+
+## 六、静态分区与动态分区
 
 ### 1.静态分区
 
@@ -295,18 +311,24 @@ import table student2  from '/export/student1';
      ```sql
      ---要想进行动态分区，需要设置参数
      hive> set hive.exec.dynamic.partition=true; //使用动态分区
+     -- 它的默认值是strick，即不允许分区列全部是动态的，这是为了防止用户有可能原意是只在子分区内进行动态建分区，但是由于疏忽忘记为主分区列指定值了，这将导致一个dml语句在短时间内创建大量的新的分区（对应大量新的文件夹），对系统性能带来影响。所以
      hive> set hive.exec.dynamic.partition.mode=nonstrict; //非严格模式
         
          insert into table order_dynamic_partition partition(order_time) select order_number,order_price,order_time from t_order;
          
      --注意字段查询的顺序，分区字段放在最后面。否则数据会有问题。
-     ```
-
-  5. 查看分区
-
+   ```
+  
+5. 查看分区
+  
      ```sql
      show partitions order_dynamic_partition;
      ```
+  
+  6. 分区不是越多越好
+     1. 分区有上线，默认1000；
+     2. 过多分区意味这更多小文件，增加HDFS负担。
+     3. 一个分区一个Map，增加jvm性能压力。
 
 ## 六、分桶表
 
