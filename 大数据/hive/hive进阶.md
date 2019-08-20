@@ -77,3 +77,141 @@ desc function max;
 
 
 
+## 四、Hive的企业级调优
+
+### 1. Fetch抓取
+
+* Fetch 抓取是指，**Hive中对某些情况的查询可以不必使用MapReduce计算**
+
+  * 例如：select * from table_name;
+  * 这种情况下，Hive可以简单地读取比表中对应地存储目录下的文件，然后输出查询结果。
+
+* 在hive-default.xml.template文件中**hive.fetch.task.conversion默认是more**，老版本hive默认是minimal，该属性修改为more以后，在全局查找、字段查找、limit查找等都不走mapreduce。
+
+* ```sql
+  # 都会执行mapreduce程序
+  set hive.fetch.task.conversion=none;
+  select * from employee;
+  select sex from employee;
+  select sex from employee limit 3;
+  # 简单执行都不会执行mapreduce程序
+  set hive.fetch.task.conversion=more;
+  select * from employee;no
+  select sex from employee;
+  select sex from employee limit 3;
+  ```
+
+### 2. 本地模式
+
+* 默认情况下是启用hadoop的job模式,把任务提交到集群中运行，这样会导致计算非常缓慢；
+
+* Hive可以通过本地模式在单台机器上处理任务。对于小数据集，执行时间可以明显被缩短。
+
+* ```sql
+  --开启本地模式，并执行查询语句
+  set hive.exec.mode.local.auto=true;  //开启本地mr
+  
+  --设置local mr的最大输入数据量，当输入数据量小于这个值时采用local  mr的方式，
+  --默认为134217728，即128M
+  set hive.exec.mode.local.auto.inputbytes.max=50000000;
+  
+  --设置local mr的最大输入文件个数，当输入文件个数小于这个值时采用local mr的方式，
+  --默认为4
+  set hive.exec.mode.local.auto.input.files.max=5;
+  
+  --执行查询的sql语句
+   select * from employee cluster by deptid;
+  ```
+
+### 3. 表的优化
+
+1. 
+
+#### 2. Map join
+
+* 如果不指定MapJoin 或者不符合 MapJoin的条件，那么Hive解析器会将Join操作转换成Common Join，即：在Reduce阶段完成join。容易发生数据倾斜。可以用 MapJoin 把小表全部加载到内存在map端进行join，避免reducer处理。
+
+* ```sql
+   --默认为true
+  set hive.auto.convert.join = true;
+  ```
+
+* ```
+  -- 大表小表的阈值设置（默认25M一下认为是小表）
+  hive.mapjoin.smalltable.filesize=25000000;
+  ```
+
+* ![](img/hive_map_join.png)
+
+#### 3. Group by
+
+* 默认情况下，Map阶段同一Key数据分发给一个reduce，当一个key数据过大时就倾斜了。
+
+* 并不是所有的聚合操作都需要在Reduce端完成，很多聚合操作都可以先在Map端Combiner进行部分聚合，最后在Reduce端得出最终结果。
+
+* ```sql
+  --是否在Map端进行聚合，默认为True
+  set hive.map.aggr = true;
+  --在Map端进行聚合操作的条目数目
+  set hive.groupby.mapaggr.checkinterval = 100000;
+  --有数据倾斜的时候进行负载均衡（默认是false）
+  set hive.groupby.skewindata = true;
+  
+  --  当选项设定为 true，生成的查询计划会有两个MR Job。第一个MR Job中，Map的输出结果会随机分布到Reduce中，每个Reduce做部分聚合操作，并输出结果，这样处理的结果是相同的Group By Key有可能被分发到不同的Reduce中，从而达到负载均衡的目的；第二个MR Job再根据预处理的数据结果按照Group By Key分布到Reduce中（这个过程可以保证相同的Group By Key被分布到同一个Reduce中），最后完成最终的聚合操作。
+  ```
+
+#### 4. count(distinct)
+
+*  数据量小的时候无所谓，数据量大的情况下，由于count distinct 操作需要用一个reduce Task来完成，这一个Reduce需要处理的数据量太大，就会导致整个Job很难完成，一般count distinct使用先group by 再count的方式替换
+
+* ```sql
+  --每个reduce任务处理的数据量 默认256000000（256M）
+  set hive.exec.reducers.bytes.per.reducer=32123456;
+  select  count(distinct ip )  from log_text;
+  --> 
+  select count(ip) from (select ip from log_text group by ip) t;
+  -- 虽然会多用一个Job来完成，但在数据量大的情况下，这个绝对是值得的。
+  ```
+
+#### 5. 笛卡尔积
+
+* 尽量避免笛卡尔积，即避免join的时候不加on条件，或者无效的on条件
+* Hive只能使用1个reducer来完成笛卡尔积。
+
+### 4. 使用分区剪裁、列剪裁
+
+- **列剪裁**
+  - 只获取需要的列的数据，减少数据输入。
+- **分区裁剪**
+  - 分区在hive实质上是目录，分区裁剪可以方便直接地过滤掉大部分数据。
+  - 尽量使用分区过滤，少用select  *
+
+### 5. 并行执行
+
+```sql
+--开启并行执行
+set hive.exec.parallel=true;
+--同一个sql允许最大并行度，默认为8。
+set hive.exec.parallel.thread.number=16;
+```
+
+### 6. 严格模式
+
+* Hive提供了一个严格模式，可以防止用户执行那些可能意想不到的不好的影响的查询。
+
+* 通过设置属性hive.mapred.mode值为默认是非严格模式**nonstrict** 。开启严格模式需要修改hive.mapred.mode值为**strict**，开启严格模式可以禁止3种类型的查询。
+
+* ```sql
+  -- （1）对于分区表，除非where语句中含有分区字段过滤条件来限制范围，否则不允许执行=
+  select * from order_partition；
+  
+  -- 异常信息：Error: Error while compiling statement: FAILED: SemanticException [Error 10041]: No partition predicate found for Alias "order_partition" Table "order_partition" 
+  
+  -- (2)对于使用了order by语句的查询，要求必须使用limit语句=
+  select * from order_partition where month='2019-03' order by order_price; 
+  
+  -- 异常信息：Error: Error while compiling statement: FAILED: SemanticException 1:61 In strict mode, if ORDER BY is specified, LIMIT must also be specified. Error encountered near token 'order_price'
+  
+  -- (3)限制笛卡尔积的查询
+  ```
+
