@@ -333,7 +333,7 @@ select get_json_object(explode(split(regexp_replace(regexp_replace(sale_info,'\\
        --将所有数据分成4片
        NTILE(4) OVER(ORDER BY sales) AS all_nt4
    from 
-       order_detail
+     
    order by 
        user_type,
        sales;
@@ -408,7 +408,7 @@ GROUPING SETS 在一个GROUP BY查询中，根据不同的维度组合进行聚�
   group by name
   UNION ALL
   select name, work_space[0] as main_place, count(employee_id) as emp_id_cnt
-   ```
+  ```
 
 * #### cube进行聚合
 
