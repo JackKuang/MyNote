@@ -47,7 +47,7 @@
    * 从storeFile中读取到数据之后，不是直接把结果数据返回给客户端，
      而是把数据先写入到BlockCache中，目的是为了加快后续的查询；然后在返回结果给客户端。
 
-## 三、HBase写流程
+## 三、HBase 写数据流程
 
 ![](img/hbase-write.png)
 
@@ -228,6 +228,7 @@ HBase的region split策略一共有以下几种：
   ```
 
 - 6、**DisabledRegionSplitPolicy**
+  
   - 不启用自动拆分, 需要指定手动拆分
 
 ## 六、hbase表的预分区
@@ -276,7 +277,7 @@ create 'student','info',SPLITS_FILE => '/opt/bigdata/split.txt'
 create 'mytable','base_info','extra_info',{NUMREGIONS => 15, SPLITALGO => 'HexStringSplit'}
 ```
 
-## 7. region 合并
+## 七、region 合并
 
 ### 1. 合并说明
 
@@ -312,4 +313,44 @@ hbase org.apache.hadoop.hbase.util.Merge test test,,1565940912661.62d28d7d20f18d
 merge_region 'c2212a3956b814a6f0d57a90983a8515','553dd4db667814cf2f050561167ca030'
 
 ```
+
+## 八、rowkey设计原则
+
+### 1. 长度原则
+
+* rowkey是一个二进制码流，可以是任意字符串，最大长度64kb，实际应用中一般为10-100bytes，以byte[]形式保存，一般设计成定长。
+* 建议越短越好，不要超过16个字节：设计过长会降低memstore内存的利用率和HFile存储数据的效率。
+
+### 2.rowkey散列原则
+
+*	建议将rowkey的高位作为散列字段，这样将提高数据均衡分布在每个RegionServer，以实现负载均衡的几率。如果没有散列字段，首字段直接是时间信息。
+*	所有的数据都会集中在一个RegionServer上，这样在数据检索的时候负载会集中在个别的RegionServer上，造成热点问题，会降低查询效率。
+
+### 3.rowkey唯一原则
+
+* 必须在设计上保证其唯一性，rowkey是按照字典顺序排序存储的，
+* 因此，设计rowkey的时候，要充分利用这个排序的特点，可以将经常读取的数据存储到一块，将最近可能会被访问的数据放到一块。
+
+## 九、表的热点
+
+* 检索habse的记录首先要通过row key来定位数据行。当大量的client访问hbase集群的一个或少数几个节点，造成少数region server的读/写请求过多、负载过大，而其他region server负载却很小，就造成了“热点”现象。
+* 解决方案：虽然解决有热点问题，但是一定程度上也影响了有序性。两者会有冲突。
+
+### 1. 预分区
+
+​		预分区的目的让表的数据可以均衡的分散在集群中，而不是默认只有一个region分布在集群的一个节点上。
+
+### 2. 加盐
+
+​		这里所说的加盐不是密码学中的加盐，而是在rowkey的前面增加随机数，具体就是给rowkey分配一个随机前缀以使得它和之前的rowkey的开头不同。
+
+### 3. 哈希
+
+​		哈希会使同一行永远用一个前缀加盐。哈希也可以使负载分散到整个集群，但是读却是可以预测的。使用确定的哈希可以让客户端重构完整的rowkey，可以使用get操作准确获取某一个行数据。
+
+### 4. 反转
+
+​		反转固定长度或者数字格式的rowkey。这样可以使得rowkey中经常改变的部分（最没有意义的部分）放在前面。这样可以有效的随机rowkey，但是牺牲了rowkey的有序性。
+
+
 
