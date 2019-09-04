@@ -82,6 +82,8 @@
 
 ## 五、Sqooq数据的导入
 
+* 导入单个表从RDBMS到HDFS。表中的每一行被视为HDFS的记录。所有记录都存储为文本文件的文本数据（或者Avro、sequence文件等二进制数据） 
+
 ### 5.1 列举出所有的数据库
 
 * 查看帮助文档
@@ -184,7 +186,9 @@ sqoop import \
   --m 1
   ```
 
-  
+--------------
+
+
 
 ### 5.6 导入关系表到Hive中
 
@@ -223,3 +227,112 @@ sqoop import \
 --hive-import \
 -m 1
 ```
+
+## 六、Sqoop数据的导出
+
+将数据从HDFS把文件导出到RDBMS数据库
+
+- 导出前，目标表必须存在于目标数据库中。
+  - 默认操作是从将文件中的数据使用INSERT语句插入到表中
+  - 更新模式下，是生成UPDATE语句更新表数据
+
+### 6.1 hdfs文件导出到mysql表中
+
+* 数据是在HDFS当中的如下目录/user/hive/warehouse/hive_source，数据内容如下
+
+  ```
+  1 zhangsan 20 hubei
+  2 lisi 30 hunan
+  3 wangwu 40 beijing
+  4 xiaoming 50 shanghai
+  ```
+
+* 创建mysql表
+
+  ```mysql
+  CREATE TABLE  fromhdfs (
+     id INT DEFAULT NULL,
+     name VARCHAR(100) DEFAULT NULL,
+     age int DEFAULT NULL,
+     address VARCHAR(100) DEFAULT NULL
+  ) ENGINE=INNODB DEFAULT CHARSET=utf8;
+  ```
+
+* sqoop导出
+
+  ```bash
+  sqoop export \
+  --connect jdbc:mysql://node1:3306/userdb \
+  --username root --password 123456 \
+  --table fromhdfs \
+  --input-fields-terminated-by " " \
+  --export-dir /user/hive/warehouse/hive_source
+  ```
+
+## 七、Sqoop作业
+
+### 7.1 创建作业
+
+```bash
+# -- import中间一个空格，后面作为作业内容
+sqoop job \
+--create myjob \
+-- import \
+--connect jdbc:mysql://node1:3306/userdb \
+--username root \
+--password 123456 \
+--table emp \
+--target-dir /sqoop/myjob \
+--delete-target-dir \
+--m 1
+```
+
+### 7.2 验证作业
+
+```bash
+sqoop job --list
+
+# Available jobs:
+#  myjob
+```
+
+### 7.3 查看作业
+
+```bash
+sqoop job --show myjob
+
+```
+
+### 7.4 执行作业
+
+```bash
+sqoop job --exec myjob
+
+# /opt/sqoop/conf/sqoop-site.xml
+```
+
+* 解决输入密码问题
+
+  ```xml
+  <!-- vi /opt
+  /sqoop/conf/sqoop-site.xml -->
+  <property>
+      <name>sqoop.metastore.client.record.password</name>
+      <value>true</value>
+      <description>If true, allow saved passwords in the metastore.
+      </description>
+  </property>
+  ```
+
+  
+
+### 7.5 删除作业
+
+```bash
+sqoop job --delete myjob
+```
+
+### 7.6 作业的用途
+
+* 结合在5.5中的增量导入，可以实现实时更新数据。
+* 虽然5.5中的配置中，导入的开始点还是创建任务的时间，但是在/root/.sqoop/文件夹中保存了最新一条的记录，下一次执行job的时候还是会根据最新的数据来处理。

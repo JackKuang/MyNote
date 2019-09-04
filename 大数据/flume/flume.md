@@ -823,7 +823,7 @@ Agent1数据分别流入到Collector1和Collector2，Flume NG本身提供了Fail
 
   1. configure(Context context)
 
-  2. 初始化context
+     初始化context
 
   3. start()
 
@@ -841,7 +841,7 @@ Agent1数据分别流入到Collector1和Collector2，Flume NG本身提供了Fail
 
 
 
-## 十、断点续传
+## 十、Flume实际使用注意事项
 
 * 如果是tail文件时，如果flume挂掉，可能日志就没有办法冲洗你监控了
 
@@ -850,7 +850,202 @@ Agent1数据分别流入到Collector1和Collector2，Flume NG本身提供了Fail
   ```
   # 监控一个目录下的新增的文件、以及文件中新增的内容
   # 并且可以记录每一给文件的采集位置
-  source.type=taildir
+  agent1.sources.source1.type = TAILDIR
+  agent1.sources.source1.positionFile = ./taildir_position.json
   ```
 
 * 运行后看，会生成taildir_position.json文件，标记inode，文件以及位置
+
+## 十一、Flume实际使用注意事项
+
+* channel参数
+
+  ```
+  capacity：默认该通道中最大的可以存储的event数量
+  trasactionCapacity：每次最大可以从source中拿到或者送到sink中的event数量
+  注意：capacity > trasactionCapacity
+  ```
+
+* 日志采集到HDFS配置说明1（sink端）
+
+  ```
+  #定义sink
+  a1.sinks.k1.type = hdfs
+  a1.sinks.k1.hdfs.path=hdfs://node1:9000/source/logs/%{type}/%Y%m%d
+  a1.sinks.k1.hdfs.filePrefix =events
+  a1.sinks.k1.hdfs.fileType = DataStream
+  a1.sinks.k1.hdfs.writeFormat = Text
+  #时间类型
+  a1.sinks.k1.hdfs.useLocalTimeStamp = true
+  #生成的文件不按条数生成
+  a1.sinks.k1.hdfs.rollCount = 0
+  #生成的文件按时间生成
+  a1.sinks.k1.hdfs.rollInterval = 30
+  #生成的文件按大小生成
+  a1.sinks.k1.hdfs.rollSize  = 10485760
+  #批量写入hdfs的个数
+  a1.sinks.k1.hdfs.batchSize = 10000
+  #flume操作hdfs的线程数（包括新建，写入等）
+  a1.sinks.k1.hdfs.threadsPoolSize=10
+  #操作hdfs超时时间
+  a1.sinks.k1.hdfs.callTimeout=30000
+  ```
+
+* 日志采集到HDFS配置说明2（sink端）
+
+    | hdfs.round      | false  | Should the timestamp be rounded down (if true, affects all time based escape sequences except %t) |
+    | --------------- | ------ | ------------------------------------------------------------ |
+    | hdfs.roundValue | 1      | Rounded down to the highest multiple of this (in the unit configured usinghdfs.roundUnit), less than current time. |
+    | hdfs.roundUnit  | second | The unit of the round down value - second, minute or hour.   |
+
+    Ø round： 默认值：false 是否启用时间上的”舍弃”，这里的”舍弃”，类似于”四舍五入”
+
+    Ø roundValue：默认值：1  时间上进行“舍弃”的值；
+
+    Ø roundUnit： 默认值：seconds时间上进行”舍弃”的单位，包含：second,minute,hour
+
+    ```
+    案例一：
+    a1.sinks.k1.hdfs.path = /flume/events/%y-%m-%d/%H:%M/%S
+    a1.sinks.k1.hdfs.round = true
+    a1.sinks.k1.hdfs.roundValue = 10
+    a1.sinks.k1.hdfs.roundUnit = minute
+    当时间为2015-10-16 17:38:59时候，hdfs.path依然会被解析为：
+    /flume/events/2015-10-16/17:30/00
+    /flume/events/2015-10-16/17:40/00
+    /flume/events/2015-10-16/17:50/00
+    因为设置的是舍弃10分钟内的时间，因此，该目录每10分钟新生成一个。
+    
+    案例二：
+    a1.sinks.k1.hdfs.path = /flume/events/%y-%m-%d/%H:%M/%S
+    a1.sinks.k1.hdfs.round = true
+    a1.sinks.k1.hdfs.roundValue = 10
+    a1.sinks.k1.hdfs.roundUnit = second
+    现象：10秒为时间梯度生成对应的目录，目录下面包括很多小文件！！！
+    格式如下：
+    /flume/events/2016-07-28/18:45/10
+    /flume/events/2016-07-28/18:45/20
+    /flume/events/2016-07-28/18:45/30
+    /flume/events/2016-07-28/18:45/40
+    /flume/events/2016-07-28/18:45/50
+    /flume/events/2016-07-28/18:46/10
+    /flume/events/2016-07-28/18:46/20
+    /flume/events/2016-07-28/18:46/30
+    /flume/events/2016-07-28/18:46/40
+    /flume/events/2016-07-28/18:46/50
+    ```
+- 5、实现数据的断点续传
+
+  - 当一个flume挂掉之后重启的时候还是可以接着上一次的数据继续收集
+    - flume在1.7版本之前使用的监控一个文件（source exec）、监控一个目录（source spooldir）都无法直接实现
+  - flume在1.7版本之后已经集成了该功能
+    - 其本质就是记录下每一次消费的位置，把消费信息的位置保存到文件中，后续程序挂掉了再重启的时候，可以接着上一次消费的数据位置继续拉取。
+  - 配置文件
+    - ==vim taildir.conf==
+      - source 类型---->taildir
+
+  ```
+  a1.channels = ch1
+  a1.sources = s1
+  a1.sinks = hdfs-sink1
+  
+  #channel
+  a1.channels.ch1.type = memory
+  a1.channels.ch1.capacity=10000
+  a1.channels.ch1.transactionCapacity=500
+  
+  #source
+  a1.sources.s1.channels = ch1
+  #监控一个目录下的多个文件新增的内容
+  a1.sources.s1.type = taildir
+  #通过 json 格式存下每个文件消费的偏移量，避免从头消费
+  a1.sources.s1.positionFile = /opt/bigdata/flume/index/taildir_position.json
+  a1.sources.s1.filegroups = f1 f2 f3 
+  a1.sources.s1.filegroups.f1 = /home/hadoop/taillogs/access.log
+  a1.sources.s1.filegroups.f2 = /home/hadoop/taillogs/nginx.log
+  a1.sources.s1.filegroups.f3 = /home/hadoop/taillogs/web.log
+  a1.sources.s1.headers.f1.headerKey = access
+  a1.sources.s1.headers.f2.headerKey = nginx
+  a1.sources.s1.headers.f3.headerKey = web
+  a1.sources.s1.fileHeader  = true
+  
+  ##sink
+  a1.sinks.hdfs-sink1.channel = ch1
+  a1.sinks.hdfs-sink1.type = hdfs
+  a1.sinks.hdfs-sink1.hdfs.path =hdfs://node1:9000/demo/data/%{headerKey}
+  a1.sinks.hdfs-sink1.hdfs.filePrefix = event_data
+  a1.sinks.hdfs-sink1.hdfs.fileSuffix = .log
+  a1.sinks.hdfs-sink1.hdfs.rollSize = 1048576
+  a1.sinks.hdfs-sink1.hdfs.rollInterval =20
+  a1.sinks.hdfs-sink1.hdfs.rollCount = 10
+  a1.sinks.hdfs-sink1.hdfs.batchSize = 1500
+  a1.sinks.hdfs-sink1.hdfs.round = true
+  a1.sinks.hdfs-sink1.hdfs.roundUnit = minute
+  a1.sinks.hdfs-sink1.hdfs.threadsPoolSize = 25
+  a1.sinks.hdfs-sink1.hdfs.fileType =DataStream
+  a1.sinks.hdfs-sink1.hdfs.writeFormat = Text
+  a1.sinks.hdfs-sink1.hdfs.callTimeout = 60000
+  ```
+    ```
+    运行后生成的 taildir_position.json文件信息如下：
+    [
+    {"inode":102626782,"pos":123,"file":"/home/hadoop/taillogs/access.log"},{"inode":102626785,"pos":123,"file":"/home/hadoop/taillogs/web.log"},{"inode":102626786,"pos":123,"file":"/home/hadoop/taillogs/nginx.log"}
+    ]
+
+    这里inode就是标记文件的，文件名称改变，这个iNode不会变，pos记录偏移量，file就是绝对路径
+    ```
+
+
+- flume的header参数配置讲解
+  
+* ==vim test-header.conf==	
+  
+    ```
+    #配置信息test-header.conf
+    a1.channels=c1
+    a1.sources=r1
+  a1.sinks=k1
+  
+    #source
+    a1.sources.r1.channels=c1
+    a1.sources.r1.type= spooldir
+    a1.sources.r1.spoolDir= /home/hadoop/test
+    a1.sources.r1.batchSize= 100
+    a1.sources.r1.inputCharset= UTF-8
+    #是否添加一个key存储目录下文件的绝对路径
+    a1.sources.r1.fileHeader= true
+    #指定存储目录下文件的绝对路径的key
+    a1.sources.r1.fileHeaderKey= mm
+    #是否添加一个key存储目录下的文件名称
+    a1.sources.r1.basenameHeader= true
+    #指定存储目录下文件的名称的key
+  a1.sources.r1.basenameHeaderKey= nn
+  
+    #channel
+    a1.channels.c1.type= memory
+    a1.channels.c1.capacity=10000
+    a1.channels.c1.transactionCapacity=500
+    ```
+    
+    ```bash
+    #sink
+    a1.sinks.k1.type=logger
+    a1.sinks.k1.channel=c1
+    
+    - 准备数据文件，添加内容
+    /home/hadoop/test/abc.txt
+    /home/hadoop/test/def.txt
+    
+    - 启动flume配置
+    
+    flume-ng agent -n a1 -c /opt/bigdata/flume/myconf -f /opt/bigdata/flume/myconf/test-header.conf -Dflume.root.logger=info,console
+    
+    - 查看控制台
+    
+    ​```
+    Event: { headers:{mm=/home/hadoop/test/abc.txt, nn=abc.txt} body: 68 65 6C 6C 6F 20 73 70 61 72 6B                hello spark }
+    19/08/30 19:23:15 INFO sink.LoggerSink: Event: { headers:{mm=/home/hadoop/test/abc.txt, nn=abc.txt} body: 68 65 6C 6C 6F 20 68 61 64 6F 6F 70             hello hadoop }
+    ​```
+    ```
+    
+    
