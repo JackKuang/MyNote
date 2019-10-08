@@ -68,15 +68,17 @@ work:node5,ip:172.17.0.5
     FROM jdk8
     MAINTAINER Jack
 
-    ADD hadoop-3.1.2.tar.gz /usr/local
-    MV /usr/local/hadoop-3.1.2 /usr/local/hadoop
-
-    ENV HADOOP_HOME /usr/local/hadoop
-    ENV PATH $HADOOP_HOME/bin:$PATH
+    
+    yum -y install java-1.8.0*
+# ADD hadoop-3.1.2.tar.gz /usr/local
+    # MV /usr/local/hadoop-3.1.2 /usr/local/hadoop
+    
+    # ENV HADOOP_HOME /usr/local/hadoop
+    # ENV PATH $HADOOP_HOME/bin:$PATH
     ```
     同目录下放hadoop安装包
     基于上一步创建的jdk8，增加hadoop环境，并初始化hdfs
-
+    
 4. 修改Hadoop配置文件
    
     解压hadoop
