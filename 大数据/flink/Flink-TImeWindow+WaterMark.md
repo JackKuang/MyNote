@@ -107,7 +107,7 @@ public class TimeWindowWordCount {
 * Ingestion time：事件进入Flink的时间
 * Processing Time：事件被处理时当前系统的时间
 
-![1569394563906](Flink-Window+WaterMark.assets/1569394563906.png)
+![1569394563906](Flink-TimeWindow+WaterMark.assets/1569394563906.png)
 
 ```
 开发上使用的数据，使用哪个时间才有意义？
@@ -448,7 +448,7 @@ public class TimeWindowWordCount {
 
 ## 五、使用WaterMark机制解决无序
 
-![使用waterMark机制处理无序的数据](Flink-Window+WaterMark.assets/使用waterMark机制处理无序的数据.png)
+![使用waterMark机制处理无序的数据](Flink-TimeWindow+WaterMark.assets/使用waterMark机制处理无序的数据.png)
 
 ```java
 /**
@@ -709,15 +709,15 @@ public class TimeWindowWordCount {
 
 有序的流的watermarks
 
-![1569479960665](Flink-Window+WaterMark.assets/1569479960665.png)
+![1569479960665](Flink-TimeWindow+WaterMark.assets/1569479960665.png)
 
 无序的流的watermarks
 
-![1569479997521](Flink-Window+WaterMark.assets/1569479997521.png)
+![1569479997521](Flink-TimeWindow+WaterMark.assets/1569479997521.png)
 
 多并行度流的watermarks
 
-![1569480051217](Flink-Window+WaterMark.assets/1569480051217.png)
+![1569480051217](Flink-TimeWindow+WaterMark.assets/1569480051217.png)
 
 
 
@@ -725,7 +725,7 @@ public class TimeWindowWordCount {
 
 得到并打印每隔 3 秒钟统计前 3 秒内的相同的 key 的所有的事件
 
-![1573294611566](Flink-Window+WaterMark.assets/1573294611566.png)
+![1573294611566](Flink-TimeWindow+WaterMark.assets/1573294611566.png)
 
 代码开发
 
@@ -852,15 +852,15 @@ public class WaterMarkWindowWordCount {
 
 ### 6.4  计算window的触发时间
 
-![1573295426278](Flink-Window+WaterMark.assets/1573295426278.png)
+![1573295426278](Flink-TimeWindow+WaterMark.assets/1573295426278.png)
 
-![1573295434967](Flink-Window+WaterMark.assets/1573295434967.png)
+![1573295434967](Flink-TimeWindow+WaterMark.assets/1573295434967.png)
 
-![1573295444736](Flink-Window+WaterMark.assets/1573295444736.png)
+![1573295444736](Flink-TimeWindow+WaterMark.assets/1573295444736.png)
 
-![1573295452688](Flink-Window+WaterMark.assets/1573295452688.png)
+![1573295452688](Flink-TimeWindow+WaterMark.assets/1573295452688.png)
 
-![1573295462557](Flink-Window+WaterMark.assets/1573295462557.png)
+![1573295462557](Flink-TimeWindow+WaterMark.assets/1573295462557.png)
 
 
 
@@ -868,9 +868,9 @@ public class WaterMarkWindowWordCount {
 
 
 
-![1573295499134](Flink-Window+WaterMark.assets/1573295499134.png)
+![1573295499134](Flink-TimeWindow+WaterMark.assets/1573295499134.png)
 
-![1573295512707](Flink-Window+WaterMark.assets/1573295512707.png)
+![1573295512707](Flink-TimeWindow+WaterMark.assets/1573295512707.png)
 
 总结：window触发的时间
 
@@ -892,9 +892,9 @@ public class WaterMarkWindowWordCount {
 
 ```
 
-![1573296359405](Flink-Window+WaterMark.assets/1573296359405.png)
+![1573296359405](Flink-TimeWindow+WaterMark.assets/1573296359405.png)
 
-![1573296391460](Flink-Window+WaterMark.assets/1573296391460.png)
+![1573296391460](Flink-TimeWindow+WaterMark.assets/1573296391460.png)
 
 ### 6.5  迟到太久的数据
 
@@ -913,11 +913,11 @@ public class WaterMarkWindowWordCount {
 000001,1461756872000
 ```
 
-![1573296944424](Flink-Window+WaterMark.assets/1573296944424.png)
+![1573296944424](Flink-TimeWindow+WaterMark.assets/1573296944424.png)
 
-![1573296954680](Flink-Window+WaterMark.assets/1573296954680.png)
+![1573296954680](Flink-TimeWindow+WaterMark.assets/1573296954680.png)
 
-![1573296963406](Flink-Window+WaterMark.assets/1573296963406.png)
+![1573296963406](Flink-TimeWindow+WaterMark.assets/1573296963406.png)
 
 发现迟到太多数据就会被丢弃
 
@@ -957,15 +957,15 @@ public class WaterMarkWindowWordCount {
 000001,1461756872000
 ```
 
-![1573297641179](Flink-Window+WaterMark.assets/1573297641179.png)
+![1573297641179](Flink-TimeWindow+WaterMark.assets/1573297641179.png)
 
 
 
-![1573297653341](Flink-Window+WaterMark.assets/1573297653341.png)
+![1573297653341](Flink-TimeWindow+WaterMark.assets/1573297653341.png)
 
-![1573297664487](Flink-Window+WaterMark.assets/1573297664487.png)
+![1573297664487](Flink-TimeWindow+WaterMark.assets/1573297664487.png)
 
-![1573297613203](Flink-Window+WaterMark.assets/1573297613203.png)
+![1573297613203](Flink-TimeWindow+WaterMark.assets/1573297613203.png)
 
 1. 当我们设置允许迟到 2 秒的事件，第一次 window 触发的条件是 watermark >= window_end_time
 2. 第二次(或者多次)触发的条件是 watermark < window_end_time + allowedLateness
@@ -1109,7 +1109,7 @@ public class WaterMarkWindowWordCount {
 
 ## 七、多并行度下的WaterMark
 
-![1573298799383](Flink-Window+WaterMark.assets/1573298799383.png)
+![1573298799383](Flink-TimeWindow+WaterMark.assets/1573298799383.png)
 
 一个window可能会接受到多个waterMark，我们以最小的为准。
 
