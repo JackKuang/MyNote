@@ -1,6 +1,9 @@
-# HADOOP
+#  HADOOP
+
+##  一、模块
 
 HADOOP分三个模块组成：
+
 1. 分布式存储 HDFS
 
 2. 分布式计算 MapReduce
@@ -10,7 +13,7 @@ HADOOP分三个模块组成：
    ![](img/hadoop.png)
 
 
-## HDFS(Hadoop Distributed File SystemHadoop分布式文件系统)
+## 二、HDFS(Hadoop Distributed File SystemHadoop分布式文件系统)
 
 1. 分布式是什么
     * 通过网络连接通信多台机器，完成一台机器无法完成的存储、计算任务。
@@ -19,7 +22,7 @@ HADOOP分三个模块组成：
 2. 为什么使用HDFS
     * 高可用、容错、可扩展
 
-## HDFS 数据块block
+## 三、HDFS 数据块block
 
 1. HDFS block块
     * 在HDFS3.X的文件系统中，文件默认时按照`128M`为一个单位，切分成一个个block，分散的数存储在集群的不同的数据节点上`datanode`。
@@ -58,70 +61,91 @@ HADOOP分三个模块组成：
     ```
 
 
-## HDFS架构图
+## 四、HDFS架构图
 
 HDFS 是主从架构 Master/！Slave、管理节点/工作节点
 
 ​	![](img/hadoop_system.png)
 
-1. NameNode
-    * 管理节点，负责关键文件系统和命名系空间，存放了HDSFS的元数据（在内存中）。
-    * 元数据信息：包括文件系统树、所有目录和文件、每个文件的块列表、块所在的DataNode等。
-    * 文件、block、目录占用大概**150Byte字节的元数据**；所以HDFS适合存储大文件，不适合存储小文件
-    * 元数据信息以命名空间镜像文件**fsimage**和编辑日志（**edits log**）的方式保存
-        * fsimage:元数据镜像文件，保存了文件系统目录书信息以及文件和块的对应关系
-        * 日志文件，保存文件系统的更改记录
-    
-2. DataNode
-   
+### 4.1 NameNode
+
+* 管理节点，负责关键文件系统和命名系空间，存放了HDSFS的元数据（在内存中）。
+* 元数据信息：包括文件系统树、所有目录和文件、每个文件的块列表、块所在的DataNode等。
+* 文件、block、目录占用大概**150Byte字节的元数据**；所以HDFS适合存储大文件，不适合存储小文件
+* 元数据信息以命名空间镜像文件**fsimage**和编辑日志（**edits log**）的方式保存
+    * fsimage:元数据镜像文件，保存了文件系统目录书信息以及文件和块的对应关系
+    * 日志文件，保存文件系统的更改记录
+
+### 4.2 DataNode
+
 * 存储block，以及bloc元数据包括数据块的长度、块数据的校验和、时间戳
   
-3. SecondaryNameNode（辅助NameNode）
-    * 定期将编辑日志和元数据信息合并，防止编辑日志文件过大，并且能保证其信息与namenode信息保持一致。
-    * SN一般在另一台单独的物理计算机上运行，因为它需要占用大量CPU时间来与namenode进行合并操作，一般情况是单独开一个线程来执行操作过程
-    
-    ![SecondaryNameNode](img/SecondaryNameNode.png)
+### 4.3 SecondaryNameNode（辅助NameNode）
 
-    当namenode运行了3600s后，SN取出fsimage和edits，合并，更新fsimage，命名为fsimage.ckpt，将fsimage.ckpt文件传入namenode中，合并过程中，客户端会继续上传文件。同时，namenode会创建新的edits.new文件，将合并过程中，产生的日志存入edits.new，namenode将 fsimage.ckpt,更名为fsimage，edits.new更名为edits。
-    
-    如果在合并过程中，namenode损坏，那么，丢失了在合并过程中产生的edits.new,因此namenode失效时，难免会丢失部分数据。
+* 定期将编辑日志和元数据信息合并，防止编辑日志文件过大，并且能保证其信息与namenode信息保持一致。
+* SN一般在另一台单独的物理计算机上运行，因为它需要占用大量CPU时间来与namenode进行合并操作，一般情况是单独开一个线程来执行操作过程
 
-## HDFS四大机制
+![SecondaryNameNode](img/SecondaryNameNode.png)
 
-1. 心跳机制
-   
-    ![heartbeat](img\heartbeat.png)
-    
-    **原理：**
-    
+当namenode运行了3600s后，SN取出fsimage和edits，合并，更新fsimage，命名为fsimage.ckpt，将fsimage.ckpt文件传入namenode中，合并过程中，客户端会继续上传文件。同时，namenode会创建新的edits.new文件，将合并过程中，产生的日志存入edits.new，namenode将 fsimage.ckpt,更名为fsimage，edits.new更名为edits。
+
+如果在合并过程中，namenode损坏，那么，丢失了在合并过程中产生的edits.new,因此namenode失效时，难免会丢失部分数据。
+
+## 五、HDFS机制
+
+### 5.1 心跳机制
+
+![heartbeat](img\heartbeat.png)
+
+**原理：**
+
 1. Master启动之后，会启动一个Ipc Server。
-    2. Salve启动，连接Master，每隔3秒钟向Master发送一个心跳指令，携带这状态信息
-    3. Master通过这个心跳的返回值，想Salve节点传达指令
 
-    **作用：**
+2. Salve启动，连接Master，每隔3秒钟向Master发送一个心跳指令，携带这状态信息
+3. Master通过这个心跳的返回值，想Salve节点传达指令
 
-   1. NameNode 全权管理数据块的复制，它周期性地从集群中的每个DataNode节点接受心跳信号和块状态报告（BlockReport）。接受到心跳信号以为这该DataNode节点工作正常。块转台报告包含了一个该DataNode上所有数据块的列表。
-   
-   2. DataNode启动后想NameNode注册，，通过后，周期性（1小时）的向NameNode上报所有的块的列表；每3秒向NameNode发送一次心跳，返回NameNode给该DataNode的命令：如复制数据到另一台机器或删除某个数据块。如果NameNode超过10分钟没有收到某个DataNode的心跳，则认为该节点不可用。
-   3. hadoop集群刚开始启动时，会进入安全模式（99.9%），就用到了心跳机制
-   
-2. 负载均衡
+**作用：**
 
-    * 当集群内新增、删除节点，或者某个节点机器内硬盘存储达到饱和值。导致非常的容易出现机器磁盘利用率不一致的问题。
-    * 需要迁移数据到不同的节点。
-    * 当机器负载差距超过10%的时候，负载均衡开始调整
-    ```bash
-    $HADOOP_HOME/sbin/start-balancer.sh -t 10%
-    ```
+1. NameNode 全权管理数据块的复制，它周期性地从集群中的每个DataNode节点接受心跳信号和块状态报告（BlockReport）。接受到心跳信号以为这该DataNode节点工作正常。块转台报告包含了一个该DataNode上所有数据块的列表。
 
-3. HDFS  安全模式
-4. 副本存放策略
+2. DataNode启动后想NameNode注册，，通过后，周期性（1小时）的向NameNode上报所有的块的列表；每3秒向NameNode发送一次心跳，返回NameNode给该DataNode的命令：如复制数据到另一台机器或删除某个数据块。如果NameNode超过10分钟没有收到某个DataNode的心跳，则认为该节点不可用。
+3. hadoop集群刚开始启动时，会进入安全模式（99.9%），就用到了心跳机制
 
-## HDFS 读写流程
+### 5.2 负载均衡
 
-特点
+* 当集群内新增、删除节点，或者某个节点机器内硬盘存储达到饱和值。导致非常的容易出现机器磁盘利用率不一致的问题。
+* 需要迁移数据到不同的节点。
+* 当机器负载差距超过10%的时候，负载均衡开始调整
+```bash
+$HADOOP_HOME/sbin/start-balancer.sh -t 10%
+```
+
+### 5.3 HDFS  安全模式
+
+作用：
+
+安全模式是HDFS的一种工作状态，处于安全模式的状态下，只向客户端提供文件的只读视图，不接受对命名空间的修改。
+
+触发的三个原因：
+
+1. 可用的block占总数的比例
+
+管理员操作安全模式：
+
+```bash
+hadoop dfsadmin -safemode leave   强制NameNode退出安全模式
+hadoop dfsadmin -safemode enter   进入安全模式
+hadoop dfsadmin -safemode get     查看安全模式状态
+hadoop dfsadmin -safemode wait    等待一直到安全模式结束
+```
+
+### 5.4 副本存放策略
+
+## 六、HDFS 读写流程
+
+特点：
 * 能够运行在廉价机器上，硬件出错常态，需要具备高容错性
-* 流式数据访问，而不是随机读写
+* **流式数据访问，而不是随机读写**
 * 面向大规模数据集，能够进行批处理、能够横向扩展
 * 简单一致性模型，假定文件是一次写入、多次读取
 
@@ -147,8 +171,7 @@ HDFS 是主从架构 Master/！Slave、管理节点/工作节点
 
     在client端向DataNode传数据的时候，HDFSOutputStream会有一个chunk buff，写满一个chunk后，会计算校验和并写入当前的chunk。之后再把带有校验和的chunk写入packet，当一个packet写满后，packet会进入dataQueue队列，其他的DataNode就是从这个dataQueue获取client端上传的数据并存储的。同时一个DataNode成功存储一个packet后之后会返回一个ack packet，放入ack Queue中。
 
-
-写文件
+### 6.1 写文件
 
 ![write](img/write.png)
 
@@ -161,7 +184,7 @@ HDFS 是主从架构 Master/！Slave、管理节点/工作节点
 7. 发送完成信号给NameNode。 
 （注：发送完成信号的时机取决于集群是强一致性还是最终一致性，强一致性则需要所有DataNode写完后才向NameNode汇报。最终一致性则其中任意一个DataNode写完后就能单独向NameNode汇报，HDFS一般情况下都是强调强一致性）
 
-读文件
+### 5.2 读文件
 
 ![read](img/read.png)
 1. 客户端与NameNode通讯获取文件的块位置信息，其中包括了块的所有冗余备份的位置信息：DataNode的列表；
@@ -176,11 +199,11 @@ QA
 
 `可了解下Hadoop下data文件夹下内容`
 
-### Hadoop HA高可用
+## 七、Hadoop HA高可用
 
 ​	![](img\hadoop_ha.png)
 
-### Hadoop联邦
+## 八、Hadoop联邦
 
 - 集群的元数据保存在namenode内存中
 - 每个文件、目录、block占用约150字节
@@ -189,7 +212,7 @@ QA
 
 ![](img/hadoop_union.png)
 
-### Hadoop存储小文件
+## 九、Hadoop存储小文件
 1. HAR文件方案
 2. SequenceFile方案
    1. NONE：不压缩
