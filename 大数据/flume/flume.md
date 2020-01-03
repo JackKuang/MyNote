@@ -854,9 +854,7 @@ Agent1数据分别流入到Collector1和Collector2，Flume NG本身提供了Fail
   agent1.sources.source1.positionFile = ./taildir_position.json
   ```
 
-* 运行后看，会生成taildir_position.json文件，标记inode，文件以及位置
-
-## 十一、Flume实际使用注意事项
+  * 运行后看，会生成taildir_position.json文件，标记inode，文件以及位置
 
 * channel参数
 
@@ -1025,8 +1023,8 @@ Agent1数据分别流入到Collector1和Collector2，Flume NG本身提供了Fail
     a1.channels.c1.type= memory
     a1.channels.c1.capacity=10000
     a1.channels.c1.transactionCapacity=500
-    ```
-    
+  ```
+  
     ```bash
     #sink
     a1.sinks.k1.type=logger
@@ -1047,5 +1045,5 @@ Agent1数据分别流入到Collector1和Collector2，Flume NG本身提供了Fail
     19/08/30 19:23:15 INFO sink.LoggerSink: Event: { headers:{mm=/home/hadoop/test/abc.txt, nn=abc.txt} body: 68 65 6C 6C 6F 20 68 61 64 6F 6F 70             hello hadoop }
     ​```
     ```
-    
+  
     
