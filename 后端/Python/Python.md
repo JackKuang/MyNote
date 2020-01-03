@@ -1,3 +1,5 @@
+
+
 # Python3 
 
 * **笔记说明：本笔记本并不记录全部内容，只做部分特殊内容**
@@ -489,4 +491,431 @@
             sys.exit()
     ```
 
-  ## 十二、函数
+## 十二、函数
+
+* 自定义函数
+
+  * 函数代码块以 **def** 关键词开头，后接函数标识符名称和圆括号 **()**。
+  * 任何传入参数和自变量必须放在圆括号中间，圆括号之间可以用于定义参数。
+  * 函数的第一行语句可以选择性地使用文档字符串—用于存放函数说明。
+  * 函数内容以冒号起始，并且缩进。
+  * **return [表达式]** 结束函数，选择性地返回一个值给调用方。不带表达式的return相当于返回 None。
+
+* 语法：
+
+  ```python
+  def 函数名（参数列表）:
+      函数体
+  ```
+
+* **可变对象与不可变对象**
+
+  * **不可变类型：**类似 c++ 的值传递，如 整数、字符串、元组。如fun（a），传递的只是a的值，没有影响a对象本身。比如在 fun（a）内部修改 a 的值，只是修改另一个复制的对象，不会影响 a 本身。
+  * **可变类型：**类似 c++ 的引用传递，如 列表，字典。如 fun（la），则是将 la 真正的传过去，修改后fun外部的la也会受影响
+
+* **参数**
+
+  * 必需参数
+    * 必需参数须以正确的顺序传入函数。调用时的数量必须和声明时的一样。
+  * 关键字参数
+    * 关键字参数和函数调用关系紧密，函数调用使用关键字参数来确定传入的参数值。
+    * 使用关键字参数允许函数调用时参数的顺序与声明时不一致，因为 Python 解释器能够用参数名匹配参数值。
+  * 默认参数
+    * 调用函数时，如果没有传递参数，则会使用默认参数。
+  * 不定长参数
+    * 加了星号 ***** 的参数会以元组(tuple)的形式导入，存放所有未命名的变量参数。
+    * 加了两个星号 ***\*** 的参数会以字典的形式导入。
+
+* **匿名函数**
+
+  * lambda 只是一个表达式，函数体比 def 简单很多。
+
+  * lambda的主体是一个表达式，而不是一个代码块。仅仅能在lambda表达式中封装有限的逻辑进去。
+
+  * lambda 函数拥有自己的命名空间，且不能访问自己参数列表之外或全局命名空间里的参数。
+
+  * 虽然lambda函数看起来只能写一行，却不等同于C或C++的内联函数，后者的目的是调用小函数时不占用栈内存从而增加运行效率。
+
+  * 语法：
+
+    ```
+    lambda [arg1 [,arg2,.....argn]]:expression
+    ```
+
+  * ```python
+    #!/usr/bin/python3
+     
+    # 可写函数说明
+    sum = lambda arg1, arg2: arg1 + arg2
+     
+    # 调用sum函数
+    print ("相加后的值为 : ", sum( 10, 20 ))
+    print ("相加后的值为 : ", sum( 20, 20 ))
+    ```
+
+  * **return语句**
+
+    * **return [表达式]** 语句用于退出函数，选择性地向调用方返回一个表达式。不带参数值的return语句返回None。之前的例子都没有示范如何返回数值，以下实例演示了 return 语句的用法：
+
+## 十三、数据结构
+
+## 十四、模块
+
+* 定义
+
+  * 把这些定义存放在文件中，为一些脚本或者交互式的解释器实例使用，这个文件被称为模块。
+  * 模块是一个包含所有你定义的函数和变量的文件，其后缀名是.py。
+  * 模块可以被别的程序引入，以使用该模块中的函数等功能。这也是使用 python 标准库的方法。
+
+* ```python
+  #!/usr/bin/python3
+  # 文件名: using_sys.py
+   
+  import sys
+   
+  print('命令行参数如下:')
+  for i in sys.argv:
+     print(i)
+   
+  print('\n\nPython 路径为：', sys.path, '\n')
+  
+  -------------------------------
+  $ python using_sys.py 参数1 参数2
+  命令行参数如下:
+  using_sys.py
+  参数1
+  参数2
+  
+  Python 路径为： ['/root', '/usr/lib/python3.4', '/usr/lib/python3.4/plat-x86_64-linux-gnu', '/usr/lib/python3.4/lib-dynload', '/usr/local/lib/python3.4/dist-packages', '/usr/lib/python3/dist-packages']
+  ```
+
+  1. import sys 引入 python 标准库中的 sys.py 模块；这是引入某一模块的方法。
+  2. sys.argv 是一个包含命令行参数的列表。
+  3. sys.path 包含了一个 Python 解释器自动查找所需模块的路径的列表。
+
+* **import语句**
+
+  * ```
+    import module1[, module2[,... moduleN]
+    ```
+
+  * 当解释器遇到 import 语句，如果模块在当前的搜索路径就会被导入。
+
+    搜索路径是一个解释器会先进行搜索的所有目录的列表。如想要导入模块 support，需要把命令放在脚本的顶端：
+
+    ```python
+    #!/usr/bin/python3
+    # Filename: support.py
+     
+    def print_func( par ):
+        print ("Hello : ", par)
+        return
+    ```
+
+    ```python
+    #!/usr/bin/python3
+    # Filename: test.py
+     
+    # 导入模块
+    import support
+     
+    # 现在可以调用模块里包含的函数了
+    support.print_func("Runoob")
+    ```
+
+  * 一个模块只会被导入一次，不管你执行了多少次import。这样可以防止导入模块被一遍又一遍地执行。
+
+  * 当我们使用import语句的时候，Python解释器是怎样找到对应的文件的呢？这就涉及到Python的搜索路径，搜索路径是由一系列目录名组成的，Python解释器就依次从这些目录中去寻找所引入的模块。
+
+  * 这看起来很像环境变量，事实上，也可以通过定义环境变量的方式来确定搜索路径。
+
+  * 搜索路径是在Python编译或安装的时候确定的，安装新的库应该也会修改。搜索路径被存储在sys模块中的path变量，做一个简单的实验，在交互式解释器中，输入以下代码：
+
+  * ```
+    >>> import sys
+    >>> sys.path
+    ['', '/usr/lib/python3.4', '/usr/lib/python3.4/plat-x86_64-linux-gnu', '/usr/lib/python3.4/lib-dynload', '/usr/local/lib/python3.4/dist-packages', '/usr/lib/python3/dist-packages']
+    >>> 
+    ```
+
+  * sys.path 输出是一个列表，其中第一项是空串''，代表当前目录（若是从一个脚本中打印出来的话，可以更清楚地看出是哪个目录），亦即我们执行python解释器的目录（对于脚本的话就是运行的脚本所在的目录）。
+
+* **from … import 语句**
+
+  *  import 直接把模块内（函数，变量的）名称导入到当前操作模块。
+
+* **__name__属性**
+
+  * 一个模块被另一个程序第一次引入时，其主程序将运行。如果我们想在模块被引入时，模块中的某一程序块不执行，我们可以用__name__属性来使该程序块仅在该模块自身运行时执行。
+
+    ```python
+    #!/usr/bin/python3
+    # Filename: using_name.py
+    
+    if __name__ == '__main__':
+       print('程序自身在运行')
+    else:
+       print('我来自另一模块')
+    ```
+
+    ```sh
+    $ python using_name.py
+    程序自身在运行
+    $ python
+    >>> import using_name
+    我来自另一模块
+    >>>
+    ```
+
+* **dir() 函数**
+
+  * 内置的函数 dir() 可以找到模块内定义的所有名称。以一个字符串列表的形式返回
+
+  * ```python
+    >>> dir(fibo)
+    ['__name__', 'fib', 'fib2']
+    # 得到一个当前模块中定义的属性列表
+    >>> dir() 
+    ['__builtins__', '__name__', 'a', 'fib', 'fibo', 'sys']
+    >>> a = 5 # 建立一个新的变量 'a'
+    >>> dir()
+    ['__builtins__', '__doc__', '__name__', 'a', 'sys']
+    ```
+
+* **标准模块**
+
+  * Python 本身带着一些标准的模块库，在 Python 库参考文档中将会介绍到（就是后面的"库参考文档"）。
+
+  * 有些模块直接被构建在解析器里，这些虽然不是一些语言内置的功能，但是他却能很高效的使用，甚至是系统级调用也没问题。
+
+  * ```python
+    >>> import sys
+    >>> sys.ps1
+    '>>> '
+    >>> sys.ps2
+    '... '
+    >>> sys.ps1 = 'C> '
+    C> print('Runoob!')
+    Runoob!
+    C> 
+    ```
+
+* 包
+
+  * 包是一种管理 Python 模块命名空间的形式，采用"点模块名称"。
+
+  * ```
+    sound/                          顶层包
+          __init__.py               初始化 sound 包
+          formats/                  文件格式转换子包
+                  __init__.py
+                  wavread.py
+                  wavwrite.py
+                  aiffread.py
+                  aiffwrite.py
+                  auread.py
+                  auwrite.py
+                  ...
+          effects/                  声音效果子包
+                  __init__.py
+                  echo.py
+                  surround.py
+                  reverse.py
+                  ...
+          filters/                  filters 子包
+                  __init__.py
+                  equalizer.py
+                  vocoder.py
+                  karaoke.py
+    ```
+
+  * 在导入一个包的时候，Python 会根据 sys.path 中的目录来寻找这个包中包含的子目录。
+
+  * 目录只有包含一个叫做 __init__.py 的文件才会被认作是一个包，主要是为了避免一些滥俗的名字（比如叫做 string）不小心的影响搜索路径中的有效模块。
+
+  * 最简单的情况，放一个空的 :file:__init__.py就可以了。当然这个文件中也可以包含一些初始化代码或者为（将在后面介绍的） __all__变量赋值。
+
+  * ```python
+    # 导入子模块:sound.effects.echo
+    import sound.effects.echo
+    # 导入子模块的防范
+    from sound.effects import echo
+    # 直接导入一个函数或者变量
+    from sound.effects.echo import echofilter
+    ```
+
+  * 注意当使用 **from package import item** 这种形式的时候，对应的 item 既可以是包里面的子模块（子包），或者包里面定义的其他名称，比如函数，类或者变量。
+
+  * import 语法会首先把 item 当作一个包定义的名称，如果没找到，再试图按照一个模块去导入。如果还没找到，抛出一个 **:exc:ImportError** 异常。
+
+  * 如果使用形如 **import item.subitem.subsubitem** 这种导入形式，除了最后一项，都必须是包，而最后一项则可以是模块或者是包，但是不可以是类，函数或者变量的名字。
+
+* **从一个包中导入* **
+
+  * 如果我们使用 from sound.effects import *会发生什么？Python 会进入文件系统，找到这个包里面所有的子模块，一个一个的把它们都导入进来。
+
+  * 如果包定义文件 __init__.py 存在一个叫做 __all__ 的列表变量，那么在使用 from package import * 的时候就把这个列表中的所有名字作为包内容导入。
+
+  * ```
+    # sounds/effects/__init__.py
+    __all__ = ["echo", "surround", "reverse"]
+    # 这表示当你使用from sound.effects import *这种用法时，你只会导入包里面这三个子模块。
+    ```
+
+## 十五、输入和输出
+
+* **读取键盘输入**
+
+  ```python
+  #!/usr/bin/python3
+  
+  str = input("请输入：");
+  print ("你输入的内容是: ", str)
+  ```
+
+* **输出格式美化**
+
+  1. 表达式语句
+
+     * **str()：** 函数返回一个用户易读的表达形式。
+     * **repr()：** 产生一个解释器易读的表达形式。
+
+     ```python
+     >>> s = 'Hello, Runoob'
+     >>> str(s)
+     'Hello, Runoob'
+     >>> repr(s)
+     "'Hello, Runoob'"
+     >>> str(1/7)
+     '0.14285714285714285'
+     ```
+
+  2. print() 函数。
+
+     ````python
+     >>> x = 10 * 3.25
+     >>> y = 200 * 200
+     >>> s = 'x 的值为： ' + repr(x) + ',  y 的值为：' + repr(y) + '...'
+     >>> print(s)
+     x 的值为： 32.5,  y 的值为：40000...
+     ````
+
+  3. 使用文件对象的 write() 方法，标准输出文件可以用 sys.stdout 引用
+
+* #### 读和写文件
+
+## 十六、文件
+
+## 十七、OS
+
+## 十八、错误和异常
+
+* **异常捕捉**
+
+  ![try_except_else_finally](Python.assets/try_except_else_finally.png)
+
+  ```
+  try:
+      runoob()
+  except AssertionError as error:
+      print(error)
+  else:
+      try:
+          with open('file.log') as file:
+              read_data = file.read()
+      except FileNotFoundError as fnf_error:
+          print(fnf_error)
+  finally:
+      print('这句话，无论异常是否发生都会执行。')
+  ```
+
+* 抛出异常
+
+  * Python 使用 raise 语句抛出一个指定的异常。
+  * raise 唯一的一个参数指定了要被抛出的异常。它必须是一个异常的实例或者是异常的类
+  * ```
+    raise [Exception [, args [, traceback]]]
+    ```
+
+  * ![raise](Python.assets/raise.png)
+
+  * ```python
+    >>>try:
+            raise NameError('HiThere')
+        except NameError:
+            print('An exception flew by!')
+            raise
+       
+    An exception flew by!
+    Traceback (most recent call last):
+      File "<stdin>", line 2, in ?
+    NameError: HiThere
+    ```
+
+* **用户自定义异常**
+
+  * 异常类继承自 Exception 类，可以直接继承，或者间接继承。
+  
+  * ```
+    >>>class MyError(Exception):
+    		# 类 Exception 默认的 __init__() 被覆盖。
+            def __init__(self, value):
+                self.value = value
+            def __str__(self):
+                return repr(self.value)
+       
+    >>> try:
+            raise MyError(2*2)
+        except MyError as e:
+            print('My exception occurred, value:', e.value)
+       
+    My exception occurred, value: 4
+    >>> raise MyError('oops!')
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in ?
+    __main__.MyError: 'oops!'
+    ```
+  
+* **定义清理行为**
+
+  * try 语句还有另外一个可选的子句，它定义了无论在任何情况下都会执行的清理行为。 例如:
+
+    ```python
+    >>>try:
+    ...     raise KeyboardInterrupt
+    ... finally:
+    ...     print('Goodbye, world!')
+    ... 
+    Goodbye, world!
+    Traceback (most recent call last):
+      File "<stdin>", line 2, in <module>
+    KeyboardInterrupt
+    ```
+
+  * 以上例子不管 try 子句里面有没有发生异常，finally 子句都会执行。
+  * 如果一个异常在 try 子句里（或者在 except 和 else 子句里）被抛出，而又没有任何的 except 把它截住，那么这个异常会在 finally 子句执行后被抛出。
+
+* **预定义的清理行为** 
+
+  * 一些对象定义了标准的清理行为，无论系统是否成功的使用了它，一旦不需要它了，那么这个标准的清理行为就会执行。
+
+  * 这面这个例子展示了尝试打开一个文件，然后把内容打印到屏幕上:
+
+    ```
+    for line in open("myfile.txt"):
+        print(line, end="")
+    ```
+
+  * 当执行完毕后，文件会保持打开状态，并没有被关闭。
+
+  * 关键词 with 语句就可以保证诸如文件之类的对象在使用完之后一定会正确的执行他的清理方法:
+
+    ```python
+    with open("myfile.txt") as f:
+        for line in f:
+            print(line, end="")
+    ```
+
+  * 以上这段代码执行完毕后，就算在处理过程中出问题了，文件 f 总是会关闭。
+
+## 十九、面向对象
