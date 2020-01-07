@@ -218,4 +218,71 @@ ognl '@java.lang.System@out.println("hello ognl")'
   ```
 
 * OGNL特殊用法请参考：https://github.com/alibaba/arthas/issues/71
+
 * OGNL表达式官方指南：https://commons.apache.org/proper/commons-ognl/language-guide.html
+
+### 3.5 排查函数调用异常现象
+
+#### 3.5.1 查看UserController的 参数/异常
+
+* 在Arthas里执行：
+
+  ```
+  watch com.example.demo.arthas.user.UserController * '{params, throwExp}'
+  ```
+
+  1. 第一个参数是类名，支持通配
+  2. 第二个参数是函数名，支持通配
+
+* 如果想把获取到的结果展开，可以用`-x`参数：
+
+  ```
+  watch com.example.demo.arthas.user.UserController * '{params, throwExp}' -x 2
+  ```
+
+#### 3.5.2 返回值表达式
+
+* 在上面的例子里，第三个参数是`返回值表达式`，它实际上是一个`ognl`表达式，它支持一些内置对象：
+
+  | 变量名    | 变量解释                                                     |
+  | --------- | ------------------------------------------------------------ |
+  | loader    | 本次调用类所在的 ClassLoader                                 |
+  | clazz     | 本次调用类的 Class 引用                                      |
+  | method    | 本次调用方法反射引用                                         |
+  | target    | 本次调用类的实例                                             |
+  | params    | 本次调用参数列表，这是一个数组，如果方法是无参方法则为空数组 |
+  | returnObj | 本次调用返回的对象。当且仅当 `isReturn==true` 成立时候有效，表明方法调用是以正常返回的方式结束。如果当前方法无返回值 `void`，则值为 null |
+  | throwExp  | 本次调用抛出的异常。当且仅当 `isThrow==true` 成立时有效，表明方法调用是以抛出异常的方式结束。 |
+  | isBefore  | 辅助判断标记，当前的通知节点有可能是在方法一开始就通知，此时 `isBefore==true` 成立，同时 `isThrow==false` 和 `isReturn==false`，因为在方法刚开始时，还无法确定方法调用将会如何结束。 |
+  | isThrow   | 辅助判断标记，当前的方法调用以抛异常的形式结束。             |
+  | isReturn  | 辅助判断标记，当前的方法调用以正常返回的形式结束。           |
+
+* 你可以利用这些内置对象来组成不同的表达式。比如返回一个数组：
+
+  ```
+  watch com.example.demo.arthas.user.UserController * '{params[0], target, returnObj}'
+  ```
+
+#### 3.5.3 条件表达式
+
+* `watch`命令支持在第4个参数里写条件表达式（第一个参数大于100），比如：
+
+  ```
+  watch com.example.demo.arthas.user.UserController * returnObj 'params[0] > 100'
+  ```
+
+#### 3.5.4 当异常时捕获
+
+* `watch`命令支持`-e`选项，表示只捕获抛出异常时的请求：
+
+  ```
+  watch com.example.demo.arthas.user.UserController * "{params[0],throwExp}" -e
+  ```
+
+#### 3.5.5 按照耗时进行过滤
+
+* watch命令支持按请求耗时进行过滤，比如：
+
+  ```
+  watch com.example.demo.arthas.user.UserController * '{params, returnObj}' '#cost>200'
+  ```
