@@ -286,3 +286,117 @@ ognl '@java.lang.System@out.println("hello ognl")'
   ```
   watch com.example.demo.arthas.user.UserController * '{params, returnObj}' '#cost>200'
   ```
+
+## 3.6 热更新代码
+
+通过`jad`/`mc`/`redefine` 命令实现动态更新代码的功能。
+
+### 3.6.1 jad反编译UserController
+
+* 反编译代码
+
+  ```
+  jad --source-only com.example.demo.arthas.user.UserController > /tmp/UserController.java
+  ```
+
+### 3.6.2 vim修改源代码
+
+* 找到对应的逻辑，修改代码
+
+### 3.6.3 sc查找加载UserController的ClassLoader
+
+* 查找加载该类的ClassLoader
+
+  ```
+  sc -d *UserController
+  ```
+
+  ```
+  sc -d *UserController | grep classLoaderHash
+  ```
+
+### 3.6.4 mc 编译
+
+* 保存好`/tmp/UserController.java`之后，使用`mc`(Memory Compiler)命令来编译，并且通过`-c`参数指定ClassLoader：
+
+  ```
+  mc -c 1be6f5c3 /tmp/UserController.java -d /tmp
+  ```
+
+### 3.6.5 redefine 加载编译
+
+* 再使用`redefine`命令重新加载新编译好的`UserController.class`：
+
+  ```
+  redefine /tmp/com/example/demo/arthas/user/UserController.class
+  ```
+
+## 3.7 动态更新应用Logger Level
+
+在这个案例里，动态修改应用的Logger Level。
+
+### 3.7.1 查找UserController的ClassLoader
+
+```
+sc -d com.example.demo.arthas.user.UserController | grep classLoaderHash
+ classLoaderHash   1be6f5c3
+```
+
+### 3.7.2 用ognl获取logger
+
+```
+ognl -c 1be6f5c3 '@com.example.demo.arthas.user.UserController@logger'
+```
+
+```
+$ ognl -c 1be6f5c3 '@com.example.demo.arthas.user.UserController@logger'
+@Logger[
+    serialVersionUID=@Long[5454405123156820674],
+    FQCN=@String[ch.qos.logback.classic.Logger],
+    name=@String[com.example.demo.arthas.user.UserController],
+    level=null,
+    effectiveLevelInt=@Integer[20000],
+    parent=@Logger[Logger[com.example.demo.arthas.user]],
+    childrenList=null,
+    aai=null,
+    additive=@Boolean[true],
+    loggerContext=@LoggerContext[ch.qos.logback.classic.LoggerContext[default]],
+]
+```
+
+```
+可以知道UserController@logger实际使用的是logback。可以看到level=null，则说明实际最终的level是从root logger里来的。
+```
+
+### 3.7.3 单独设置UserController的logger level
+
+```
+ognl -c 1be6f5c3 '@com.example.demo.arthas.user.UserController@logger.setLevel(@ch.qos.logback.classic.Level@DEBUG)'
+```
+
+再次获取`UserController@logger`，可以发现已经是`DEBUG`了：
+
+```
+ognl -c 1be6f5c3 '@com.example.demo.arthas.user.UserController@logger'
+$ ognl -c 1be6f5c3 '@com.example.demo.arthas.user.UserController@logger'
+@Logger[
+    serialVersionUID=@Long[5454405123156820674],
+    FQCN=@String[ch.qos.logback.classic.Logger],
+    name=@String[com.example.demo.arthas.user.UserController],
+    level=@Level[DEBUG],
+    effectiveLevelInt=@Integer[10000],
+    parent=@Logger[Logger[com.example.demo.arthas.user]],
+    childrenList=null,
+    aai=null,
+    additive=@Boolean[true],
+    loggerContext=@LoggerContext[ch.qos.logback.classic.LoggerContext[default]],
+]
+```
+
+### 3.7.4  修改logback的全局logger level
+
+通过获取`root` logger，可以修改全局的logger level：
+
+```
+ognl -c 1be6f5c3 '@org.slf4j.LoggerFactory@getLogger("root").setLevel(@ch.qos.logback.classic.Level@DEBUG)'
+```
