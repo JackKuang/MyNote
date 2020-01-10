@@ -1,3 +1,5 @@
+[TOC]
+
 # Arthas
 
 ## 一、介绍
@@ -10,14 +12,14 @@
 
 启动一个普通项目
 
-```
+```sh
 wget https://alibaba.github.io/arthas/arthas-demo.jar
 java -jar arthas-demo.jar
 ```
 
 启动 arthas
 
-```
+```sh
 wget https://alibaba.github.io/arthas/arthas-demo.jar
 java -jar arthas-demo.jar
 ```
@@ -50,15 +52,15 @@ java -jar arthas-demo.jar
 
 * 通过`watch`命令可以查看函数的参数/返回值/常信息。
 
-  ```
+  ```sh
   watch demo.MathGame primeFactors returnObj
   ```
 
-  ```
+  ```sh
   watch demo.MathGame primeFactors params
   ```
 
-  ```
+  ```sh
   watch demo.MathGame primeFactors params[0]
   ```
 
@@ -75,14 +77,14 @@ java -jar arthas-demo.jar
 
 启动一个SpringBoot项目
 
-```
+```sh
 wget https://github.com/hengyunabc/katacoda-scenarios/raw/master/demo-arthas-spring-boot.jar
 java -jar demo-arthas-spring-boot.jar
 ```
 
 启动Arthas
 
-```
+```sh
 wget https://alibaba.github.io/arthas/arthas-boot.jar
 java -jar arthas-boot.jar --target-ip 0.0.0.0
 ```
@@ -95,19 +97,19 @@ java -jar arthas-boot.jar --target-ip 0.0.0.0
 
 * 也可以指定单个key：
 
-  ```
+  ```sh
   sysprop java.version
   ```
 
 * 也可以通过`grep`来过滤： 
 
-  ```
+  ```sh
   sysprop | grep user
   ```
 
 * 可以设置新的value： 
 
-  ```
+  ```sh
   sysprop testKey testValue
   ```
 
@@ -127,19 +129,19 @@ java -jar arthas-boot.jar --target-ip 0.0.0.0
 
 * 如果搜索的是接口，还会搜索所有的实现类。比如查看所有的`Filter`实现类：
 
-  ```
+  ```sh
   sc javax.servlet.Filter
   ```
 
 * 通过`-d`参数，可以打印出类加载的具体信息，很方便查找类加载问题。
 
-  ```
+  ```sh
   sc -d javax.servlet.Filter
   ```
 
 * `sc`支持通配，比如搜索所有的`StringUtils`：
 
-  ```
+  ```sh
   sc *StringUtils
   ```
 
@@ -147,19 +149,19 @@ java -jar arthas-boot.jar --target-ip 0.0.0.0
 
 * `sm`命令则是查找类的具体函数。比如：
 
-  ```
+  ```sh
   sm java.math.RoundingMode
   ```
   
 * 通过`-d`参数可以打印函数的具体属性：
 
-  ```
+  ```sh
   sm -d java.math.RoundingMode
   ```
 
 * 也可以查找特定的函数，比如查找构造函数：
 
-  ```
+  ```sh
   sm java.math.RoundingMode <init>
   ```
 
@@ -167,13 +169,13 @@ java -jar arthas-boot.jar --target-ip 0.0.0.0
 
 * 可以通过 `jad` 命令来反编译代码：
 
-  ```
+  ```sh
   jad com.example.demo.arthas.user.UserController
   ```
 
 * 通过`--source-only`参数可以只打印出在反编译的源代码：
 
-  ```
+  ```sh
   jad --source-only com.example.demo.arthas.user.UserController
   ```
 
@@ -183,7 +185,7 @@ java -jar arthas-boot.jar --target-ip 0.0.0.0
 
 #### 3.4.1 调用static函数
 
-```
+```sh
 ognl '@java.lang.System@out.println("hello ognl")'
 ```
 
@@ -193,23 +195,23 @@ ognl '@java.lang.System@out.println("hello ognl")'
 
 * 获取`UserController`类里的`logger`字段：
 
-  ```
+  ```sh
   ognl -c 1be6f5c3 @com.example.demo.arthas.user.UserController@logger
   ```
 
 * 还可以通过`-x`参数控制返回值的展开层数。比如：
 
-  ```
+  ```sh
   ognl -c 1be6f5c3 -x 2 @com.example.demo.arthas.user.UserController@logger
   ```
 
 #### 3.4.3  执行多行表达式，赋值给临时变量，返回一个List
 
-* ```
+* ```sh
   ognl '#value1=@System@getProperty("java.home"), #value2=@System@getProperty("java.runtime.name"), {#value1, #value2}'
   ```
 
-* ```
+* ```sh
   $ ognl '#value1=@System@getProperty("java.home"), #value2=@System@getProperty("java.runtime.name"), {#value1, #value2}'
   @ArrayList[
       @String[/Library/Java/JavaVirtualMachines/jdk1.8.0_162.jdk/Contents/Home/jre],
@@ -227,7 +229,7 @@ ognl '@java.lang.System@out.println("hello ognl")'
 
 * 在Arthas里执行：
 
-  ```
+  ```sh
   watch com.example.demo.arthas.user.UserController * '{params, throwExp}'
   ```
 
@@ -236,7 +238,7 @@ ognl '@java.lang.System@out.println("hello ognl")'
 
 * 如果想把获取到的结果展开，可以用`-x`参数：
 
-  ```
+  ```sh
   watch com.example.demo.arthas.user.UserController * '{params, throwExp}' -x 2
   ```
 
@@ -259,7 +261,7 @@ ognl '@java.lang.System@out.println("hello ognl")'
 
 * 你可以利用这些内置对象来组成不同的表达式。比如返回一个数组：
 
-  ```
+  ```sh
   watch com.example.demo.arthas.user.UserController * '{params[0], target, returnObj}'
   ```
 
@@ -267,7 +269,7 @@ ognl '@java.lang.System@out.println("hello ognl")'
 
 * `watch`命令支持在第4个参数里写条件表达式（第一个参数大于100），比如：
 
-  ```
+  ```sh
   watch com.example.demo.arthas.user.UserController * returnObj 'params[0] > 100'
   ```
 
@@ -275,7 +277,7 @@ ognl '@java.lang.System@out.println("hello ognl")'
 
 * `watch`命令支持`-e`选项，表示只捕获抛出异常时的请求：
 
-  ```
+  ```sh
   watch com.example.demo.arthas.user.UserController * "{params[0],throwExp}" -e
   ```
 
@@ -283,7 +285,7 @@ ognl '@java.lang.System@out.println("hello ognl")'
 
 * watch命令支持按请求耗时进行过滤，比如：
 
-  ```
+  ```sh
   watch com.example.demo.arthas.user.UserController * '{params, returnObj}' '#cost>200'
   ```
 
@@ -307,11 +309,11 @@ ognl '@java.lang.System@out.println("hello ognl")'
 
 * 查找加载该类的ClassLoader
 
-  ```
+  ```sh
   sc -d *UserController
   ```
 
-  ```
+  ```sh
   sc -d *UserController | grep classLoaderHash
   ```
 
@@ -319,7 +321,7 @@ ognl '@java.lang.System@out.println("hello ognl")'
 
 * 保存好`/tmp/UserController.java`之后，使用`mc`(Memory Compiler)命令来编译，并且通过`-c`参数指定ClassLoader：
 
-  ```
+  ```sh
   mc -c 1be6f5c3 /tmp/UserController.java -d /tmp
   ```
 
@@ -337,7 +339,7 @@ ognl '@java.lang.System@out.println("hello ognl")'
 
 ### 3.7.1 查找UserController的ClassLoader
 
-```
+```sh
 sc -d com.example.demo.arthas.user.UserController | grep classLoaderHash
  classLoaderHash   1be6f5c3
 ```
@@ -348,7 +350,7 @@ sc -d com.example.demo.arthas.user.UserController | grep classLoaderHash
 ognl -c 1be6f5c3 '@com.example.demo.arthas.user.UserController@logger'
 ```
 
-```
+```sh
 $ ognl -c 1be6f5c3 '@com.example.demo.arthas.user.UserController@logger'
 @Logger[
     serialVersionUID=@Long[5454405123156820674],
@@ -370,13 +372,13 @@ $ ognl -c 1be6f5c3 '@com.example.demo.arthas.user.UserController@logger'
 
 ### 3.7.3 单独设置UserController的logger level
 
-```
+```sh
 ognl -c 1be6f5c3 '@com.example.demo.arthas.user.UserController@logger.setLevel(@ch.qos.logback.classic.Level@DEBUG)'
 ```
 
 再次获取`UserController@logger`，可以发现已经是`DEBUG`了：
 
-```
+```sh
 ognl -c 1be6f5c3 '@com.example.demo.arthas.user.UserController@logger'
 $ ognl -c 1be6f5c3 '@com.example.demo.arthas.user.UserController@logger'
 @Logger[
@@ -397,6 +399,185 @@ $ ognl -c 1be6f5c3 '@com.example.demo.arthas.user.UserController@logger'
 
 通过获取`root` logger，可以修改全局的logger level：
 
-```
+```sh
 ognl -c 1be6f5c3 '@org.slf4j.LoggerFactory@getLogger("root").setLevel(@ch.qos.logback.classic.Level@DEBUG)'
+```
+
+## 3.8 获取Spring Context
+
+展示获取spring context，再获取bean，然后调用函数。
+
+### 3.8.1 使用tt命令获取到spring context
+
+* `tt`即 TimeTunnel，它可以记录下指定方法每次调用的入参和返回信息，并能对这些不同的时间下调用进行观测。
+
+* [https://alibaba.github.io/arthas/tt.html](https://alibaba.github.io/arthas/tt.html)
+
+  ```sh
+  tt -t org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter invokeHandlerMethod
+  ```
+
+* 发送请求时可以看到，tt命令捕获了一个请求
+
+  ```sh
+  $ tt -t org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdaptePress Q or Ctrl+C to abort.
+  Affect(class-cnt:1 , method-cnt:1) cost in 252 ms.
+   INDE  TIMESTAMP    COST(  IS-R  IS-  OBJECT     CLASS               METHOD
+   X                  ms)    ET    EXP
+  -----------------------------------------------------------------------------------------
+   1000  2019-02-15   4.583  true  fal  0xc93cf1a  RequestMappingHand  invokeHandlerMethod
+         15:38:32     923          se              lerAdapter
+  ```
+
+### 3.8.2 使用tt命令从调用记录里获取到spring context
+
+*  ```
+  tt -i 1000 -w 'target.getApplicationContext()'
+  ```
+
+* ```
+  $ tt -i 1000 -w 'target.getApplicationContext()'
+  @AnnotationConfigEmbeddedWebApplicationContext[
+      reader=@AnnotatedBeanDefinitionReader[org.springframework.context.annotation.AnnotatedBeanDefinitionReader@2e457641],
+      scanner=@ClassPathBeanDefinitionScanner[org.springframework.context.annotation.ClassPathBeanDefinitionScanner@6eb38026],
+      annotatedClasses=null,
+      basePackages=null,
+  ]
+  Affect(row-cnt:1) cost in 439 ms.
+  ```
+
+### 3.8.3 获取spring bean，并调用函数
+
+* ```
+  tt -i 1000 -w 'target.getApplicationContext().getBean("helloWorldService").getHelloMessage()'
+  ```
+
+## 3.9 排查HTTP请求返回401
+
+* 我们知道`401`通常是被权限管理的`Filter`拦截了，那么到底是哪个`Filter`处理了这个请求，返回了401
+
+#### 3.9.1 跟踪所有的Filter函数
+
+* 开始trace：
+
+  ```
+  trace javax.servlet.Filter *
+  ```
+
+* 访问请求
+
+* 可以在调用树的最深层，找到`AdminFilterConfig$AdminFilter`返回了`401`：
+
+  ```
+  +---[3.806273ms] javax.servlet.FilterChain:doFilter()
+  |   `---[3.447472ms] com.example.demo.arthas.AdminFilterConfig$AdminFilter:doFilter()
+  |       `---[0.17259ms] javax.servlet.http.HttpServletResponse:sendError()
+  ```
+
+#### 3.9.2 通过stack获取调用栈
+
+* 上面是通过`trace`命令来获取信息，从结果里，我们可以知道通过`stack`跟踪
+
+* 访问请求
+
+* `HttpServletResponse:sendError()`，同样可以知道是哪个`Filter`返回了`401`
+
+* 执行：
+
+  ```
+  stack javax.servlet.http.HttpServletResponse sendError 'params[0]==401'
+  ```
+
+* 就可以看到方法栈了
+
+## 3.10 排查HTTP请求返回404
+
+404是内容找不到。那么到底是哪个Servlet处理了这个请求，返回了404？
+
+### 3.10.1 跟踪所有的Servlet函数
+
+* 开始trace：
+
+  ```
+  trace javax.servlet.Servlet * > /tmp/servlet.txt
+  ```
+
+* 发送请求
+* 查看servlet日志数据
+
+## 3.11 理解Spring Boot应用的ClassLoader结构
+
+## 3.12 查找Top N线程
+
+* 查看所有线程信息
+
+```
+thread
+```
+
+* 查看具体线程的栈
+
+* 查看线程ID 16的栈：
+
+```
+thread 16
+```
+
+* 查看CPU使用率top n线程的栈
+
+```
+thread -n 3
+```
+
+* 查看5秒内的CPU使用率top n线程栈
+
+```
+thread -n 3 -i 5000
+```
+
+* 查找线程是否有阻塞
+
+```
+thread -b
+```
+
+## 3.13 Web Console
+
+* Arthas支持通过Web Socket来连接。
+* 当在本地启动时，可以访问 http://127.0.0.1:8563/ ，通过浏览器来使用Arthas。
+
+## 3.14 arthas-boot支持的参数
+
+`arthas-boot.jar` 支持很多参数，可以执行 `java -jar arthas-boot.jar -h` 来查看。
+
+### 3.14.1 允许外部访问
+
+默认情况下， arthas server侦听的是 `127.0.0.1` 这个IP，如果希望远程可以访问，可以使用`--target-ip`的参数。
+
+```
+java -jar arthas-boot.jar --target-ip
+```
+
+### 3.14.2 列出所有的版本
+
+```
+java -jar arthas-boot.jar --versions
+```
+
+使用指定版本：
+
+```
+java -jar arthas-boot.jar --use-version 3.1.0
+```
+
+### 3.14.3 只侦听Telnet端口，不侦听HTTP端口
+
+```
+java -jar arthas-boot.jar --telnet-port 9999 --http-port -1
+```
+
+### 3.14.4 打印运行的详情
+
+```
+java -jar arthas-boot.jar -v
 ```
