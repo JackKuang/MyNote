@@ -1,4 +1,9 @@
+[TOC]
+
 # ClickHouse
+
+* ClickHouse作为一款高性能OLAP数据库，确实是在很多场景下，查询效率会有很大的提升。
+* 但是其数据库与其他的数据库略有不同，所以需要了解与学习这个数据库。
 
 ## 一、简介
 
@@ -198,3 +203,36 @@ ClickHouse支持在表中定义主键。为了使查询能够快速在主键中�
   - 各种聚合可能违背了数据的逻辑完整性
 * 如果我们直接使用非聚合数据而不进行任何聚合时，我们的计算量可能是减少的。
 * 然而，相对于聚合中很大一部分工作被离线完成，在线计算需要尽快的完成计算，因为用户在等待结果。
+
+## 二、入门指南
+
+### 2.1 安装
+
+* 安装上推荐安装官方文档上来安装，整个安装过程也不麻烦。
+* https://clickhouse.yandex/docs/zh/getting_started/install/
+* 默认的一些配置
+  * 启动程序在：/etc/init/clickhouse-server (start/stop/status)
+  * 日志在：/var/log/clickhouse-server目录下
+  * 配置文件：/etc/clickhouse-server/，其中config.xml为配置文件，user.xml为用户权限文件。
+
+### 2.2  使用指南
+
+* 安装官网：https://clickhouse.yandex/docs/zh/getting_started/tutorial/
+* 如果节点安装，实际根据配置安装即可，现测试为目的，以Docker容器为基础进行配置集群。
+
+#### 2.2.1 单节点配置
+
+* ```sh
+  docker run -d --name clickhouse-server --privileged  -p 8123:8123 -p 9000:9000 --ulimit nofile=262144:262144 --volume=/home/docker/volume/clickhouse-server:/var/lib/clickhouse yandex/clickhouse-server
+  ```
+
+* 直接通过工具即可连接
+
+#### 2.2.2  集群安装
+
+* CilckHouse集群式同构集群（ 还有一个是异构集群）
+  1. 在所有的机器上安装ClickHouse
+  2. 配置集群配置文件
+  3. 创建表实例
+  4. 创建分布式表
+
