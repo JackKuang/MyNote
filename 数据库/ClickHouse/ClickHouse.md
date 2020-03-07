@@ -226,14 +226,132 @@ ClickHouse支持在表中定义主键。为了使查询能够快速在主键中�
   docker run -d --name clickhouse-server --privileged  -p 8123:8123 -p 9000:9000 --ulimit nofile=262144:262144 --volume=/home/docker/volume/clickhouse-server:/var/lib/clickhouse yandex/clickhouse-server
   ```
 
-* 直接通过工具即可连接
+* yum资源安装，参考官网示例即可
+
+* rpm下载安装https://packagecloud.io/altinity/clickhouse/
 
 #### 2.2.2  集群安装
 
+* 服务器准备
+
+  ```sh
+  # 修改文件读取限制
+  vim /etc/security/limits.conf
+  vim /etc/security/limits.d/90-nroc.conf
+  # 修改selinux
+  vim /etc/selinux/config
+  ```
+
 * CilckHouse集群式同构集群（ 还有一个是异构集群）
   1. 在所有的机器上安装ClickHouse
-  2. 配置集群配置文件
+  
+  2. 配置集群配置文件/etc/metrika.xml
+  
+     ```xml
+     <?xml version="1.0" encoding="utf-8"?>
+     
+     <yandex> 
+       <clickhouse_remote_servers> 
+         <perftest_3shards_1replicas> 
+             
+           <!-- 分片 -->
+           <shard> 
+             <internal_replication>true</internal_replication>  
+         	<!-- 副本 -->
+             <replica> 
+               <host>hadoop102</host>  
+               <port>9000</port> 
+             </replica> 
+           </shard>  
+           <shard> 
+             <replica> 
+               <internal_replication>true</internal_replication>  
+               <host>hadoop103</host>  
+               <port>9000</port> 
+             </replica> 
+           </shard>  
+           <shard> 
+             <internal_replication>true</internal_replication>  
+             <replica> 
+               <host>hadoop104</host>  
+               <port>9000</port> 
+             </replica> 
+           </shard> 
+         </perftest_3shards_1replicas> 
+       </clickhouse_remote_servers>  
+         <!-- 高可用 -->
+       <zookeeper-servers> 
+         <node index="1"> 
+           <host>hadoop102</host>  
+           <port>2181</port> 
+         </node>  
+         <node index="2"> 
+           <host>hadoop103</host>  
+           <port>2181</port> 
+         </node>  
+         <node index="3"> 
+           <host>hadoop104</host>  
+           <port>2181</port> 
+         </node> 
+       </zookeeper-servers>  
+         <!-- 节点名称，各节点保持不一致 -->
+       <macros> 
+         <!-- 分片 -->
+         <shard>aaa</shard>  
+         <!-- 备份 -->
+         <replica>hadoop104</replica> 
+       </macros>  
+        
+     
+       <networks> 
+         <ip>::/0</ip> 
+       </networks>  
+       <clickhouse_compression> 
+         <case> 
+           <min_part_size>10000000000</min_part_size>  
+           <min_part_size_ratio>0.01</min_part_size_ratio>  
+           <method>lz4</method> 
+         </case> 
+       </clickhouse_compression> 
+     </yandex>
+     ```
+  
   3. 创建表实例
+  
+     * 分布式表
+  
+     ```sql
+     CREATE TABLE table_name
+     (
+         EventDate DateTime,
+         CounterID UInt32,
+         UserID UInt32
+     ) ENGINE = ReplicatedMergeTree('/clickhouse/tables/{layer}-{shard}/table_name', '{replica}')
+     PARTITION BY toYYYYMM(EventDate)
+     ORDER BY (CounterID, EventDate, intHash32(UserID))
+     SAMPLE BY intHash32(UserID)
+     ```
+  
+     * 大括号里面的内容，会替换成被替换为配置文件里 'macros' 那部分配置的值
+  
+       ```xml
+       <macros>
+           <layer>05</layer>
+           <shard>02</shard>
+           <replica>example05-02-1.yandex.ru</replica>
+       </macros>
+       ```
+  
+     * ZooKeeper 中该表的路径”对每个可复制表都要是唯一的。不同分片上的表要有不同的路径。 这种情况下，路径包含下面这些部分
+  
+     * `/clickhouse/tables/` 是公共前缀，推荐使用这个。
+  
+     * `{layer}-{shard}` 是分片标识部分。在此示例中，由于 Yandex.Metrica 集群使用了两级分片，所以它是由两部分组成的。但对于大多数情况来说，你只需保留 {shard} 占位符即可，它会替换展开为分片标识。
+  
+     * `table_name` 是该表在 ZooKeeper 中的名称。使其与 ClickHouse 中的表名相同比较好。 这里它被明确定义，跟 ClickHouse 表名不一样，它并不会被 RENAME 语句修改。
+  
+     * https://clickhouse.tech/docs/zh/operations/table_engines/replication/
+  
   4. 创建分布式表
 
 ## 三、客户端
@@ -294,6 +412,24 @@ curl 'http://localhost:8123/?query=SELECT%201'
 
 ## 四、数据类型
 
+对比
+
+![image-20200307113426975](ClickHouse.assets/image-20200307113426975.png)
+
+| Mysql     | Hive      | ClickHouse |
+| --------- | --------- | ---------- |
+| byte      | TINYINT   | Int8       |
+| short     | SMALLINT  | Int16      |
+| int       | INT       | Int32      |
+| long      | BIGINT    | Int64      |
+| varchar   | STRING    | String     |
+| timestamp | TIMESTAMP | DateTime   |
+| float     | FLOAT     | FLOAT32    |
+| double    | DOUBLE    | FLOAT64    |
+| boolean   | BOOOLEAN  | 无         |
+
+ClickHouse详细字段介绍
+
 | 分类                                                     | 数据类型           | 描述                                                         |
 | -------------------------------------------------------- | ------------------ | ------------------------------------------------------------ |
 | 整型范围                                                 | Int8               | [-128 : 127]                                                 |
@@ -315,7 +451,7 @@ curl 'http://localhost:8123/?query=SELECT%201'
 |                                                          | FixedString        | FixedString(n)<br />固定长度 N 的字符串（N 必须是严格的正自然数）。<br />不推荐使用 |
 | 时间                                                     | Date               | 日期类型，用两个字节存储，表示从 1970-01-01 (无符号) 到当前的日期值。<br />最小值输出为0000-00-00。 |
 |                                                          | DateTime           | 时间戳类型。用四个字节（无符号的）存储 Unix 时间戳）。允许存储与日期类型相同的范围内的值。最小值为 0000-00-00 00:00:00。时间戳类型值精确到秒（没有闰秒） |
-| 枚举                                                     | Enum8,Enum16       | `Enum8` 用 `'String'= Int8` 对描述。<br /> `Enum16` 用 `'String'= Int16` 对描述。<br />用户使用的是字符串常量，但所有含有 `Enum` 数据类型的操作都是按照包含整数的值来执行。这在性能方面比使用 `String` 数据类型更有效。 |
+| 枚举                                                     | Enum8,Enum16       | `Enum8` 用 `'String'= Int8` 对描述。<br /> `Enum16` 用 `'String'= Int16` 对描述。<br />用户使用的是字符串常量，但所有含有 `Enum` 数据类型的操作都是按照包含整数的值来执行。这在性能方面比使用 `String` 数据类型更有效。<br />所有的查询都是一字符串为显示，如果要查Int值，需要使用cast(field,'Int8)函数 |
 | 空                                                       | Nullable(TypeName) | 允许用特殊标记 ([NULL](https://clickhouse.tech/docs/zh/query_language/syntax/)) 表示"缺失值"，可以与 `TypeName` 的正常值存放一起。例如，`Nullable(Int8)` 类型的列可以存储 `Int8` 类型值，而没有值的行将存储 `NULL`。<br />注意点 使用 `Nullable` 几乎总是对性能产生负面影响，在设计数据库时请记住这一点 |
 
 ## 五、数据库引擎
@@ -416,36 +552,10 @@ ENGINE = MySQL('host:port', 'database', 'user', 'password')
   
   ENGINE MergeTree() PARTITION BY toYYYYMM(EventDate) ORDER BY (CounterID, EventDate, intHash32(UserID)) SAMPLE BY intHash32(UserID) SETTINGS index_granularity=8192
   ```
-  * `ENGINE` - 引擎名和参数。 `ENGINE = MergeTree()`. `MergeTree` 引擎没有参数。
-
-  * `PARTITION BY` — [分区键](https://clickhouse.tech/docs/zh/operations/table_engines/custom_partitioning_key/) 。
-
-    要按月分区，可以使用表达式 `toYYYYMM(date_column)` ，这里的 `date_column` 是一个 [Date](https://clickhouse.tech/docs/zh/data_types/date/) 类型的列。这里该分区名格式会是 `"YYYYMM"` 这样。
-
-  * `ORDER BY` — 表的排序键。
-
-    可以是一组列的元组或任意的表达式。 例如: `ORDER BY (CounterID, EventDate)` 。
-
-  * `PRIMARY KEY` - 主键，如果要设成 [跟排序键不相同](https://clickhouse.tech/docs/zh/operations/table_engines/mergetree/)。
-
-    默认情况下主键跟排序键（由 `ORDER BY` 子句指定）相同。 因此，大部分情况下不需要再专门指定一个 `PRIMARY KEY` 子句。
-
-  * `SAMPLE BY` — 用于抽样的表达式。
-
-    如果要用抽样表达式，主键中必须包含这个表达式。例如： `SAMPLE BY intHash32(UserID) ORDER BY (CounterID, EventDate, intHash32(UserID))` 。
-
-  * `SETTINGS` — 影响 `MergeTree` 性能的额外参数：
-
-    - `index_granularity` — 索引粒度。即索引中相邻『标记』间的数据行数。默认值，8192 。该列表中所有可用的参数可以从这里查看 [MergeTreeSettings.h](https://github.com/ClickHouse/ClickHouse/blob/master/dbms/src/Storages/MergeTree/MergeTreeSettings.h) 。
-    - `index_granularity_bytes` — 索引粒度，以字节为单位，默认值: 10Mb。如果仅按数据行数限制索引粒度, 请设置为0(不建议)。
-    - `enable_mixed_granularity_parts` — 启用或禁用通过 `index_granularity_bytes` 控制索引粒度的大小。在19.11版本之前, 只有 `index_granularity` 配置能够用于限制索引粒度的大小。当从大表(数十或数百兆)中查询数据时候，`index_granularity_bytes` 配置能够提升ClickHouse的性能。如果你的表内数据量很大，可以开启这项配置用以提升`SELECT` 查询的性能。
-    - `use_minimalistic_part_header_in_zookeeper` — 数据片段头在 ZooKeeper 中的存储方式。如果设置了 `use_minimalistic_part_header_in_zookeeper=1` ，ZooKeeper 会存储更少的数据。更多信息参考『服务配置参数』这章中的 [设置描述](https://clickhouse.tech/docs/zh/operations/server_settings/settings/#server-settings-use_minimalistic_part_header_in_zookeeper) 。
-    - `min_merge_bytes_to_use_direct_io` — 使用直接 I/O 来操作磁盘的合并操作时要求的最小数据量。合并数据片段时，ClickHouse 会计算要被合并的所有数据的总存储空间。如果大小超过了 `min_merge_bytes_to_use_direct_io` 设置的字节数，则 ClickHouse 将使用直接 I/O 接口（`O_DIRECT` 选项）对磁盘读写。如果设置 `min_merge_bytes_to_use_direct_io = 0` ，则会禁用直接 I/O。默认值：`10 * 1024 * 1024 * 1024` 字节。
-    - `merge_with_ttl_timeout` — TTL合并频率的最小间隔时间。默认值: 86400 (1 天)。
-    - `write_final_mark` — 启用或禁用在数据片段尾部写入最终索引标记。默认值: 1（不建议更改）。
-    - `storage_policy` — 存储策略。 参见 [使用多个区块装置进行数据存储](https://clickhouse.tech/docs/zh/operations/table_engines/mergetree/#table_engine-mergetree-multiple-volumes).
+  ![image-20200307120836077](ClickHouse.assets/image-20200307120836077.png)
 
 * **数据副本**
+  
   * 只有 MergeTree 系列里的表可支持副本：
     - ReplicatedMergeTree
     - ReplicatedSummingMergeTree
@@ -457,12 +567,16 @@ ENGINE = MySQL('host:port', 'database', 'user', 'password')
   * 副本是表级别的，不是整个服务器级的。所以，服务器里可以同时有复制表和非复制表。
   * 依赖于Zookeeper实现表复制
 * **自定义分区键**
+  
   * 一个分区是指按指定规则逻辑组合一起的表的记录集。可以按任意标准进行分区，如按月，按日或按事件类型。为了减少需要操作的数据，每个分区都是分开存储的。访问数据时，ClickHouse 尽量使用这些分区的最小子集。
 * **ReplacingMergeTree**
+  
   * 该引擎和[MergeTree](https://clickhouse.tech/docs/zh/operations/table_engines/mergetree/)的不同之处在于它会删除具有相同主键的重复项。
 * **SummingMergeTree**
+  
   * 当合并 `SummingMergeTree` 表的数据片段时，ClickHouse 会把所有具有相同主键的行合并为一行，该行包含了被合并的行中具有数值数据类型的列的汇总值。
 * **AggregatingMergeTree**
+  
   * 该引擎继承自 [MergeTree](https://clickhouse.tech/docs/zh/operations/table_engines/mergetree/)，并改变了数据片段的合并逻辑。 ClickHouse 会将相同主键的所有行（在一个数据片段内）替换为单个存储一系列聚合函数状态的行。
 * **CollapsingMergeTree**
   * 该引擎继承于 [MergeTree](https://clickhouse.tech/docs/zh/operations/table_engines/mergetree/)，并在数据块合并算法中添加了折叠行的逻辑。
@@ -474,7 +588,10 @@ ENGINE = MySQL('host:port', 'database', 'user', 'password')
 
 ### 6.2 Log
 
-* 暂未找到该表的优势
+* 适合小表存储
+  * 数据存在磁盘中，append添加
+  * 不支持索引
+  * 没有并发控制
 
 ### 6.3 外部表引擎
 
@@ -483,3 +600,39 @@ ENGINE = MySQL('host:port', 'database', 'user', 'password')
 * JDBC
 * ODBC
 * HDFS
+
+### 6.4 其他表引擎
+
+* Memory
+  * 在简单查询上达到最大生产率（超过10 GB /秒）
+  * 重新启动服务器时，表中的数据消失，表将变为空。
+* Merge
+  * `Merge` 引擎 (不要跟 `MergeTree` 引擎混淆) 本身不存储数据，但可用于同时从任意多个其他的表中读取数据。
+  * 读是自动并行的，不支持写入。读取时，那些被真正读取到数据的表的索引（如果有的话）会被使用。
+
+## 七、HDFS
+
+* 特点
+  * 支持读写
+  * 不支持修改
+  * 不支持索引
+  * 不支持副本
+
+* 从HDFS导入数据
+
+  ```sql
+  ENGINE = HDFS(URI, format)
+  CREATE TABLE hdfs_engine_table (name String, value UInt32) ENGINE=HDFS('hdfs://hdfs1:9000/other_storage', 'TSV')
+  ```
+
+* HDFS文件可多个，且用表达式使用https://clickhouse.tech/docs/zh/operations/table_engines/hdfs/
+* 直接查询会比较慢，建议把HDFS的数据查询并插入到MergeTree表中。
+
+## 八、优化
+
+* max_table_size_to_drop
+  * 数据删除需要分区或者表最大值
+* max_memory_usage
+  * 单次查询Query的最大值
+* 删除多个节点上的同一张表
+  * drop table [t] on cluster [cliclhouse_cluster]
