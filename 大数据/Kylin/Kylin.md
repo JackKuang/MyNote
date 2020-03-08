@@ -211,7 +211,7 @@ Cube 是通过预计算缓存在 Hbase 中，这部分查询可以在秒级甚�
 - Mapper 会利用内存做预聚合，算出所有组合；Mapper 输出的每个 Key 都是不同的，这样会减少输出到 Hadoop MapReduce 的数据量，Combiner 也不再需要；
 - 一轮 MapReduce 便会完成所有层次的计算，减少 Hadoop 任务的调配。
 
-### 1.5 Kylin 中的几核心概念
+### 1.5 Kylin 中的几个核心概念
 
 #### 1.5.1 维度和度量
 
