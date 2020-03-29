@@ -78,16 +78,16 @@ HDFS 是主从架构 Master/！Slave、管理节点/工作节点
 
 ### 4.2 DataNode
 
-* 存储block，以及bloc元数据包括数据块的长度、块数据的校验和、时间戳
+* 存储block，以及block元数据包括数据块的长度、块数据的校验和、时间戳
   
 ### 4.3 SecondaryNameNode（辅助NameNode）
 
-* 定期将编辑日志和元数据信息合并，防止编辑日志文件过大，并且能保证其信息与namenode信息保持一致。
+* ​	，防止编辑日志文件过大，并且能保证其信息与namenode信息保持一致。
 * SN一般在另一台单独的物理计算机上运行，因为它需要占用大量CPU时间来与namenode进行合并操作，一般情况是单独开一个线程来执行操作过程
 
 ![SecondaryNameNode](img/SecondaryNameNode.png)
 
-当namenode运行了3600s后，SN取出fsimage和edits，合并，更新fsimage，命名为fsimage.ckpt，将fsimage.ckpt文件传入namenode中，合并过程中，客户端会继续上传文件。同时，namenode会创建新的edits.new文件，将合并过程中，产生的日志存入edits.new，namenode将 fsimage.ckpt,更名为fsimage，edits.new更名为edits。
+当namenode运行了**3600s**后，SN取出fsimage和edits，合并，更新fsimage，命名为fsimage.ckpt，将fsimage.ckpt文件传入namenode中，合并过程中，客户端会继续上传文件。同时，namenode会创建新的edits.new文件，将合并过程中，产生的日志存入edits.new，namenode将 fsimage.ckpt,更名为fsimage，edits.new更名为edits。
 
 如果在合并过程中，namenode损坏，那么，丢失了在合并过程中产生的edits.new,因此namenode失效时，难免会丢失部分数据。
 
@@ -102,13 +102,13 @@ HDFS 是主从架构 Master/！Slave、管理节点/工作节点
 1. Master启动之后，会启动一个Ipc Server。
 
 2. Salve启动，连接Master，每隔3秒钟向Master发送一个心跳指令，携带这状态信息
-3. Master通过这个心跳的返回值，想Salve节点传达指令
+3. Master通过这个心跳的返回值，向Salve节点传达指令
 
 **作用：**
 
-1. NameNode 全权管理数据块的复制，它周期性地从集群中的每个DataNode节点接受心跳信号和块状态报告（BlockReport）。接受到心跳信号以为这该DataNode节点工作正常。块转台报告包含了一个该DataNode上所有数据块的列表。
+1. NameNode 全权管理数据块的复制，它周期性地从集群中的每个DataNode节点接受心跳信号和块状态报告（BlockReport）。接受到心跳信号以为这该DataNode节点工作正常。块状态报告包含了一个该DataNode上所有数据块的列表。
 
-2. DataNode启动后想NameNode注册，，通过后，周期性（1小时）的向NameNode上报所有的块的列表；每3秒向NameNode发送一次心跳，返回NameNode给该DataNode的命令：如复制数据到另一台机器或删除某个数据块。如果NameNode超过10分钟没有收到某个DataNode的心跳，则认为该节点不可用。
+2. DataNode启动后向NameNode注册，，通过后，周期性（1小时）的向NameNode上报所有的块的列表；每3秒向NameNode发送一次心跳，返回NameNode给该DataNode的命令：如复制数据到另一台机器或删除某个数据块。如果NameNode超过10分钟没有收到某个DataNode的心跳，则认为该节点不可用。
 3. hadoop集群刚开始启动时，会进入安全模式（99.9%），就用到了心跳机制
 
 ### 5.2 负载均衡
