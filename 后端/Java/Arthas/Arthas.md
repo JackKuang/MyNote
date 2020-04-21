@@ -20,8 +20,8 @@ java -jar arthas-demo.jar
 启动 arthas
 
 ```sh
-wget https://alibaba.github.io/arthas/arthas-demo.jar
-java -jar arthas-demo.jar
+wget https://alibaba.github.io/arthas/arthas-boot.jar
+java -jar arthas-boot.jar
 ```
 
 ### 2.1 dashboard

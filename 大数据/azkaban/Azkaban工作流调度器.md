@@ -226,7 +226,7 @@ bin/azkaban-web-start.sh
 bin/azkaban-executor-start.sh
 
 # 需在服务根目录执行
-# 启动成功后访问“https://ip:8443”，珠海一是httpps
+# 启动成功后访问“https://ip:8443”，注意是httpps
 ```
 
 登录界面

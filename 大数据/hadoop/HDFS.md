@@ -190,7 +190,7 @@ hadoop dfsadmin -safemode wait    等待一直到安全模式结束
 1. 客户端与NameNode通讯获取文件的块位置信息，其中包括了块的所有冗余备份的位置信息：DataNode的列表；
 2. 客户端获取文件位置信息后直接同有文件块的DataNode通讯，读取文件
 3. 如果第一个DataNode无法连接，客户端将自动联系下一个DataNode
-4. 如果块数据的校验值出错，则客户端需要向NameNode报告，并联系下一个NameNode
+4. 如果块数据的校验值出错，则客户端需要向NameNode报告，并联系下一个DataNode
 
 QA
 
