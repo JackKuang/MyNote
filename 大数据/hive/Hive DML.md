@@ -61,7 +61,7 @@ desc formatted student_partition3;
 -- 增加列
 alter table student_par add columns(col string);
 -- 修改列
-alter table student_par change columns old_col new_col int;
+alter table student_par change old_col new_col int;
 -- 替换列
 alter table student_par replace cloumns(eid INT empid Int)
 -- 删除列
@@ -317,8 +317,10 @@ import table student2  from '/export/student1';
          insert into table order_dynamic_partition partition(order_time) select order_number,order_price,order_time from t_order;
          
      --注意字段查询的顺序，分区字段放在最后面。否则数据会有问题。
+     ```
    ```
   
+   ```
 5. 查看分区
   
      ```sql
