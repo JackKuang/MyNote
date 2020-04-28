@@ -177,9 +177,7 @@ nohup sh carte.sh pwd/carte-8080.xml > carte-8080.out 2>&1 &
 set OPT= ....
 ```
 
-增加`-Duser.timezone=GMT+8`，可见是由于时区问题的。
-
-1. 
+增加`-Duser.timezone=GMT+8`，可见是由于时区问题的.
 
 #### 3.1.5 优缺点
 
@@ -677,5 +675,6 @@ set OPT= ....
 #### 3.5.1 背景
 
 * 想到Logstash是因为Flume和Logstash功能差不多，也是日志采集。
+* 后面发现也Logstash不仅仅支持ElasticSearch，可以支持数据源、HDFS。
 
 ## 四、实际开发选择什么样的工具
