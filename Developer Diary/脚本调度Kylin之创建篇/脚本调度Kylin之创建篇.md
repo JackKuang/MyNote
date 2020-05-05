@@ -115,124 +115,124 @@ ${kylin_url}/api/cubes
 
 3. body体
 
-   ```json
-   {
-   	"modelDescData": "........",
-   	"project": "tbl_biz_log_plus"
-   }
-   ```
+```json
+{
+"modelDescData": "........",
+"project": "tbl_biz_log_plus"
+}
+```
 
-   modelDescData内部为json转义内容
+modelDescData内部为json转义内容
 
-   ```json
-   {
-   	"name": "${Cube名称}",
-   	"model_name": "${Mode名称}",
-   	"description": "",
-   	"dimensions": [{
-   		"name": "${维度1}",
-   		"table": "${表名}",
-   		"column": "${维度1}"
-   	}, {
-   		"name": "${维度2}",
-   		"table": "${表名}",
-   		"column": "${维度2}"
-   	}, {
-   		"name": "${维度2}",
-   		"table": "${表名}",
-   		"column": "${维度2}"
-   	}, {
-   		"name": "${维度3}",
-   		"table": "${表名}",
-   		"column": "${维度3}"
-   	}],
-       //统计量度
-   	"measures": [{
-   		"name": "_COUNT_",
-   		"function": {
-   			"expression": "COUNT",
-   			"returntype": "bigint",
-   			"parameter": {
-   				"type": "constant",
-   				"value": "1"
-   			},
-   			"configuration": {}
-   		}
-   	}, {
-   		"name": "count_uid",
-   		"function": {
-   			"expression": "COUNT_DISTINCT",
-   			"returntype": "hllc(16)",
-   			"parameter": {
-   				"type": "column",
-   				"value": "${表名}.${量度1}"
-   			}
-   		},
-   		"showDim": false
-   	}],
-   	"dictionaries": [],
-       // rowkey设计原则
-   	"rowkey": {
-   		"rowkey_columns": [{
-   			"column": "${表名}.${维度1}",
-   			"encoding": "dict",
-   			"isShardBy": "false",
-   			"encoding_version": 1
-   		}, {
-   			"column": "${表名}.${维度2}",
-   			"encoding": "dict",
-   			"isShardBy": "false",
-   			"encoding_version": 1
-   		}, {
-   			"column": "${表名}.${维度3}",
-   			"encoding": "dict",
-   			"isShardBy": "false",
-   			"encoding_version": 1
-   		}, {
-   			"column": "${表名}.${维度4}",
-   			"encoding": "dict",
-   			"isShardBy": "false",
-   			"encoding_version": 1
-   		}]
-   	},
-       // 维度购机优化
-   	"aggregation_groups": [{
-   		"includes": ["${表名}.${维度4}"],
-   		"select_rule": {
-   			"hierarchy_dims": [
-   				["TBL_BIZ_LOG_PLUS_'${startDate}'.APP_ID", "TBL_BIZ_LOG_PLUS_'${startDate}'.CHANNEL_ID"]
-   			],
-   			"mandatory_dims": ["TBL_BIZ_LOG_PLUS_'${startDate}'.DT"],
-   			"joint_dims": []
-   		}
-   	}],
-   	"mandatory_dimension_set_list": [],
-   	"partition_date_start": 0,
-   	"notify_list": [],
-   	"hbase_mapping": {
-   		"column_family": [{
-   			"name": "F1",
-   			"columns": [{
-   				"qualifier": "M",
-   				"measure_refs": ["_COUNT_"]
-   			}]
-   		}, {
-   			"name": "F2",
-   			"columns": [{
-   				"qualifier": "M",
-   				"measure_refs": ["count_uid"]
-   			}]
-   		}]
-   	},
-   	"volatile_range": "0",
-   	"retention_range": "0",
-   	"status_need_notify": ["ERROR", "DISCARDED", "SUCCEED"],
-   	"auto_merge_time_ranges": [],
-   	"engine_type": "2",
-   	"storage_type": "2",
-   	"override_kylin_properties": {}
-   }
-   ```
+```json
+{
+"name": "${Cube名称}",
+"model_name": "${Mode名称}",
+"description": "",
+"dimensions": [{
+"name": "${维度1}",
+"table": "${表名}",
+"column": "${维度1}"
+}, {
+"name": "${维度2}",
+"table": "${表名}",
+"column": "${维度2}"
+}, {
+"name": "${维度2}",
+"table": "${表名}",
+"column": "${维度2}"
+}, {
+"name": "${维度3}",
+"table": "${表名}",
+"column": "${维度3}"
+}],
+//统计量度
+"measures": [{
+"name": "_COUNT_",
+"function": {
+"expression": "COUNT",
+"returntype": "bigint",
+"parameter": {
+"type": "constant",
+"value": "1"
+},
+"configuration": {}
+}
+}, {
+"name": "count_uid",
+"function": {
+"expression": "COUNT_DISTINCT",
+"returntype": "hllc(16)",
+"parameter": {
+"type": "column",
+"value": "${表名}.${量度1}"
+}
+},
+"showDim": false
+}],
+"dictionaries": [],
+// rowkey设计原则
+"rowkey": {
+"rowkey_columns": [{
+"column": "${表名}.${维度1}",
+"encoding": "dict",
+"isShardBy": "false",
+"encoding_version": 1
+}, {
+"column": "${表名}.${维度2}",
+"encoding": "dict",
+"isShardBy": "false",
+"encoding_version": 1
+}, {
+"column": "${表名}.${维度3}",
+"encoding": "dict",
+"isShardBy": "false",
+"encoding_version": 1
+}, {
+"column": "${表名}.${维度4}",
+"encoding": "dict",
+"isShardBy": "false",
+"encoding_version": 1
+}]
+},
+// 维度购机优化
+"aggregation_groups": [{
+"includes": ["${表名}.${维度4}"],
+"select_rule": {
+"hierarchy_dims": [
+["TBL_BIZ_LOG_PLUS_'${startDate}'.APP_ID", "TBL_BIZ_LOG_PLUS_'${startDate}'.CHANNEL_ID"]
+],
+"mandatory_dims": ["TBL_BIZ_LOG_PLUS_'${startDate}'.DT"],
+"joint_dims": []
+}
+}],
+"mandatory_dimension_set_list": [],
+"partition_date_start": 0,
+"notify_list": [],
+"hbase_mapping": {
+"column_family": [{
+"name": "F1",
+"columns": [{
+"qualifier": "M",
+"measure_refs": ["_COUNT_"]
+}]
+}, {
+"name": "F2",
+"columns": [{
+"qualifier": "M",
+"measure_refs": ["count_uid"]
+}]
+}]
+},
+"volatile_range": "0",
+"retention_range": "0",
+"status_need_notify": ["ERROR", "DISCARDED", "SUCCEED"],
+"auto_merge_time_ranges": [],
+"engine_type": "2",
+"storage_type": "2",
+"override_kylin_properties": {}
+}
+```
 
 ### 3.6 构建任务
 
