@@ -29,12 +29,21 @@ setenforce 0 && sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
 ## 五、调整内核参数，对于K8S
 
 ```sh
-cat > kubernetes.conf <<EOF net.bridge.bridge-nf-call-iptables=1 net.bridge.bridge-nf-call-ip6tables=1 net.ipv4.ip_forward=1 net.ipv4.tcp_tw_recycle=0
+cat > kubernetes.conf << EOF
+net.bridge.bridge-nf-call-iptables=1
+net.bridge.bridge-nf-call-ip6tables=1
+net.ipv4.ip_forward=1 net.ipv4.tcp_tw_recycle=0
 vm.swappiness=0 # 禁止使用 swap 空间，只有当系统 OOM 时才允许使用它
 vm.overcommit_memory=1 # 不检查物理内存是否够用
 vm.panic_on_oom=0 # 开启 OOM
-fs.inotify.max_user_instances=8192 fs.inotify.max_user_watches=1048576 fs.file-max=52706963 fs.nr_open=52706963 net.ipv6.conf.all.disable_ipv6=1 net.netfilter.nf_conntrack_max=2310720 EOF
-cp kubernetes.conf /etc/sysctl.d/kubernetes.conf sysctl -p /etc/sysctl.d/kubernetes.conf
+fs.inotify.max_user_instances=8192
+fs.inotify.max_user_watches=1048576
+fs.file-max=52706963
+fs.nr_open=52706963
+net.ipv6.conf.all.disable_ipv6=1 net.netfilter.nf_conntrack_max=2310720
+EOF
+cp kubernetes.conf /etc/sysctl.d/kubernetes.conf
+sysctl -p /etc/sysctl.d/kubernetes.conf
 ```
 
 ## 六、调整系统时区
@@ -155,13 +164,16 @@ yum install -y yum-utils device-mapper-persistent-data lvm2
 
 yum-config-manager \
 --add-repo \
-http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo yum update -y && yum install -y docker-ce
+http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+
+yum update -y
+yum install -y docker-ce
 
 
 mkdir -p /etc/docker
 cat > /etc/docker/daemon.json <<-EOF
 {
-  "registry-mirrors": ["https://*.mirror.aliyuncs.com"],
+  "registry-mirrors": ["https://lycm6amm.mirror.aliyuncs.com"],
   "exec-opts":  ["native.cgroupdriver=systemd"],
   "log-driver":  "json-file",
   "log-opts":  {
@@ -179,18 +191,18 @@ systemctl enable docker
 ## 三、安装 **Kubeadm** （主从配置）
 
 ```sh
-cat > /etc/yum.repos.d/kubernetes.repo <<EOF 
-[kubernetes]
-name=Kubernetes
-baseurl=http://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
-enabled=1
-gpgcheck=0
-repo_gpgcheck=0
-gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
-EOF
+    cat > /etc/yum.repos.d/kubernetes.repo <<EOF 
+    [kubernetes]
+    name=Kubernetes
+    baseurl=http://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
+    enabled=1
+    gpgcheck=0
+    repo_gpgcheck=0
+    gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+    EOF
 
-yum -y install kubeadm kubectl kubelet
-systemctl enable kubelet.service
+    yum -y install kubeadm kubectl kubelet
+    systemctl enable kubelet.service
 
 ```
 
@@ -242,7 +254,7 @@ kubeadm init --config=kubeadm-config.yaml --experimental-upload-certs | tee kube
 * 问题：
 
   	[WARNING Hostname]: hostname "node01" could not be reached
-  	[WARNING Hostname]: hostname "node01": lookup node01 on 100.100.2.138:53: no such host
+    	[WARNING Hostname]: hostname "node01": lookup node01 on 100.100.2.138:53: no such host
 
 * 原因：
 
@@ -417,6 +429,36 @@ kubeadm join 172.16.134.1:6443 --token abcdef.0123456789abcdef \
     --discovery-token-ca-cert-hash sha256:74c8bd14a97d1a2d14381e0d56576ea71599da10d975949455396e14e125c159 
 ```
 
+提示加入成功
+```
+This node has joined the cluster:
+* Certificate signing request was sent to apiserver and a response was received.
+* The Kubelet was informed of the new secure connection details.
+```
+
+Master查看k8s服务状态
+
+
+```
+[root@Jack etc]# kubectl get pod -n kube-system
+NAME                             READY   STATUS              RESTARTS   AGE
+coredns-7ff77c879f-dzwfd         1/1     Running             0          11h
+coredns-7ff77c879f-lfjfz         1/1     Running             0          11h
+etcd-node01                      1/1     Running             0          11h
+kube-apiserver-node01            1/1     Running             0          11h
+kube-controller-manager-node01   1/1     Running             2          11h
+kube-flannel-ds-amd64-jc76t      0/1     Pending             0          32s
+kube-flannel-ds-amd64-w87zn      1/1     Running             0          11h
+kube-proxy-lntlr                 0/1     ContainerCreating   0          32s
+kube-proxy-nbjmd                 1/1     Running             0          11h
+kube-scheduler-node01            1/1     Running             2          11h
+[root@Jack etc]# kubectl get node
+NAME     STATUS     ROLES    AGE   VERSION
+node01   Ready      master   11h   v1.18.2
+node02   NotReady   <none>   63s   v1.18.2
+
+```
+
 ```
 kubectl get pod -n kube-system [-w]
 kubectl get node [-w]
@@ -424,3 +466,27 @@ kubectl get node [-w]
 -w作为持续观测
 ```
 
+期间：新的节点会pull docker，构建docker容器
+
+最终，空节点加入成功
+
+```
+[root@Jack install-k8s]# kubectl get pod -n kube-system
+NAME                             READY   STATUS    RESTARTS   AGE
+coredns-7ff77c879f-dzwfd         1/1     Running   0          11h
+coredns-7ff77c879f-lfjfz         1/1     Running   0          11h
+etcd-node01                      1/1     Running   0          11h
+kube-apiserver-node01            1/1     Running   0          11h
+kube-controller-manager-node01   1/1     Running   5          11h
+kube-flannel-ds-amd64-jc76t      1/1     Running   0          25m
+kube-flannel-ds-amd64-w87zn      1/1     Running   0          11h
+kube-proxy-lntlr                 1/1     Running   0          25m
+kube-proxy-nbjmd                 1/1     Running   0          11h
+kube-scheduler-node01            1/1     Running   5          11h
+[root@Jack install-k8s]# kubectl get node
+NAME     STATUS   ROLES    AGE   VERSION
+node01   Ready    master   11h   v1.18.2
+node02   Ready    <none>   25m   v1.18.2
+```
+
+至此，Docker集群构建成功。

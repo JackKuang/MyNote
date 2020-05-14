@@ -1,0 +1,34 @@
+* 集群资源分类
+  * 名称空间级别：namespace
+  * 集群级别：role
+  * 元数据型：HPA
+* 名称空间级别：namespace
+  * 工作负载型资源（Workload）:
+    * Pob
+    * ReplicatSet
+    * Deploymetn
+    * StatefulState
+    * DaemonSet
+    * Job
+    * CronJob
+  * 服务发现以及负载均衡资源（）：
+    * Service
+    * Ingress
+  * 配置与存储型资源：
+    * Volume（存储卷）
+    * CSI（容器存储接口）
+  * 特殊类型的存储卷：
+    * ConfigMap（配置中心）
+    * Secret
+    * DownwardAPI
+* 集群级资源：
+  * Namespace
+  * Node
+  * Role
+  * ClusterRole
+  * RoleBinding
+  * ClusterRoleBinding
+* 元数据型资源：
+  * HPA
+  * PodTemplate
+  * LimitRange
