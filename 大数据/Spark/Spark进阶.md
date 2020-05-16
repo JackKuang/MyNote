@@ -180,7 +180,7 @@ rdd3.collect
   - 程序运行完成后对应的checkpoint数据就不会消失
 
 ```scala
-wu   sc.setCheckpointDir("/checkpoint")
+   sc.setCheckpointDir("/checkpoint")
    val rdd1=sc.textFile("/words.txt")
    rdd1.cache
    rdd1.checkpoint
@@ -258,7 +258,7 @@ stage中的每一个分区对应一个task，在同一个stage中就有很多可
 2. Master通知对应的worker节点启动executor进程(计算资源)
 3. executor进程向Driver端发送注册并且申请task请求
 4. Driver端运行客户端的main方法，构建SparkContext对象，在SparkContext对象内部依次构建DAGScheduler和TaskScheduler
-5. 按照客户端代码洪rdd的一系列操作顺序，生成DAG有向无环图
+5. 按照客户端代码rdd的一系列操作顺序，生成DAG有向无环图
 6. DAGScheduler拿到DAG有向无环图之后，按照宽依赖进行stage的划分。每一个stage内部有很多可以并行运行的task，最后封装在一个一个的taskSet集合中，然后把taskSet发送给TaskScheduler
 7. TaskScheduler得到taskSet集合之后，依次遍历取出每一个task提交到worker节点上的executor进程中运行
 8. 所有task运行完成，Driver端向Master发送注销请求，Master通知Worker关闭executor进程，Worker上的计算资源得到释放，最后整个任务也就结束了。

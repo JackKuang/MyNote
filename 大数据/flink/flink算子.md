@@ -353,7 +353,7 @@ fromCollection(Collection)
 
 Map：输入一个元素，然后返回一个元素，中间可以做一些清洗转换等操作
 FlatMap：输入一个元素，可以返回零个，一个或者多个元素
-<span style="color:red">MapPartition</span>>：类似map，一次处理一个分区的数据【如果在进行map处理的时候需要获取第三方资源链接，建议使用MapPartition】
+<span style="color:red">MapPartition</span>：类似map，一次处理一个分区的数据【如果在进行map处理的时候需要获取第三方资源链接，建议使用MapPartition】
 Filter：过滤函数，对传入的数据进行判断，符合条件的数据会被留下
 Reduce：对数据进行聚合操作，结合当前元素和上一次reduce返回的值进行聚合操作，然后返回一个新的值
 Aggregate：sum、max、min等
@@ -890,7 +890,7 @@ public class CounterDemo {
         result.writeAsText("d:\\data\\mycounter");
         JobExecutionResult jobResult = env.execute("counter");
         //3：获取累加器
-        int num = jobResult.w("num-lines");
+        int num = jobResult.getAccumulatorResult("num-lines");
         System.out.println("num:"+num);
 
     }

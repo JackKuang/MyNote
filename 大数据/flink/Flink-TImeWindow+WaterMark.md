@@ -217,7 +217,7 @@ public class TimeWindowWordCount {
 
 自定义source，模拟：第 13 秒的时候连续发送 2 个事件，但是有一个事件确实在第13秒的发送出去了，另外一个事件因为某种原因在19秒的时候才发送出去，第 16 秒的时候再发送 1 个事件
 
-```
+```java
 /**
  * 每隔5秒计算最近10秒单词出现的次数
  */
@@ -439,7 +439,6 @@ public class TimeWindowWordCount {
         @Nullable
         @Override
         public Watermark getCurrentWatermark() {
-
             return new Watermark(System.currentTimeMillis());
         }
     }

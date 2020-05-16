@@ -50,9 +50,9 @@ public class WordCount {
 
 ![Operator State](flink高级.assets/Operator State.png)
 
-* Operaor States是Task級別的State，也就是说，每个Task都对应着一个State。
+* Operaor States是Task级別的State，也就是说，每个Task都对应着一个State。
 * Kafka Connector source中的每个分区（task）都需要记录消费的topic的partition和offset等信息。
-* operator state 只有一种托管状态：`ValueState` `
+* operator state 只有一种托管状态：`ValueState`
 
 #### 1.2.2 Keyed State
 
@@ -1043,7 +1043,7 @@ checkPoint vs savePoint
 注意：为了能够在作业的不同版本之间以及 Flink 的不同版本之间顺利升级，强烈推荐程序员通过 uid(String) 方法手动的给算子赋予 ID，这些 ID 将用于确定每一个算子的状态范围。如果不手动给各算子指定 ID，则会由 Flink 自动给每个算子生成一个 ID。只要这些 ID 没有改变就能从保存点（savepoint）将程序恢复回来。而这些自动生成的 ID 依赖于程序的结构，并且对代码的更改是很敏感的。因此，强烈建议用户手动的设置 ID。
 
 ```
-.setId("xxxx");
+.uid("xxxx");
 算子后面指定算子的方法。
 ```
 

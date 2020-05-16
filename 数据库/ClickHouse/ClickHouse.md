@@ -589,16 +589,21 @@ ENGINE = MySQL('host:port', 'database', 'user', 'password')
 ### 6.2 Log
 
 * 适合小表存储
-  * 数据存在磁盘中，append添加
-  * 不支持索引
-  * 没有并发控制
+  * 数据被顺序append写到磁盘上。
+  * 不支持delete、update。
+  * 不支持index。
+  * 不支持原子性写。
+  * insert会阻塞select操作。
+* 具体区别：
+  * TinyLog：不支持并发读取数据文件，查询性能较差；格式简单，适合用来暂存中间数据。
+  * StripLog：支持并发读取数据文件，查询性能比TinyLog好；将所有列存储在同一个大文件中，减少了文件个数。
+  * Log：支持并发读取数据文件，查询性能比TinyLog好；每个列会单独存储在一个独立文件中。
 
 ### 6.3 外部表引擎
 
 * Kafka
 * MySQL
-* JDBC
-* ODBC
+* JDBC/ODBC
 * HDFS
 
 ### 6.4 其他表引擎

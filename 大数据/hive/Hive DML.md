@@ -64,7 +64,7 @@ alter table student_par add columns(col string);
 alter table student_par change old_col new_col int;
 -- 替换列
 alter table student_par replace cloumns(eid INT empid Int)
--- 删除列
+-- 删除列,原有的又col1，col2，删除col3
 alter table student_par replace cloumns(col1 string,col2 string)
 ```
 
