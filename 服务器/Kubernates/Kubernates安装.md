@@ -50,10 +50,10 @@ sysctl -p /etc/sysctl.d/kubernetes.conf
 
 ```sh
 # 设置系统时区为 中国/上海
-timedatectl set-timezone Asia/Shanghai
 # 将当前的 UTC 时间写入硬件时钟
-timedatectl set-local-rtc 0
 # 重启依赖于系统时间的服务
+timedatectl set-timezone Asia/Shanghai
+timedatectl set-local-rtc 0
 systemctl restart rsyslog
 systemctl restart crond
 ```
@@ -191,18 +191,18 @@ systemctl enable docker
 ## 三、安装 **Kubeadm** （主从配置）
 
 ```sh
-    cat > /etc/yum.repos.d/kubernetes.repo <<EOF 
-    [kubernetes]
-    name=Kubernetes
-    baseurl=http://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
-    enabled=1
-    gpgcheck=0
-    repo_gpgcheck=0
-    gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
-    EOF
+cat > /etc/yum.repos.d/kubernetes.repo <<EOF 
+[kubernetes]
+name=Kubernetes
+baseurl=http://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
 
-    yum -y install kubeadm kubectl kubelet
-    systemctl enable kubelet.service
+yum -y install kubeadm kubectl kubelet
+systemctl enable kubelet.service
 
 ```
 
@@ -286,7 +286,7 @@ kubeadm init --config=kubeadm-config.yaml --experimental-upload-certs | tee kube
   在不提升配置的情况下，忽略错误
 
   ```sh
-  kubeadm init --config=kubeadm-config.yaml --upload-certs --ignore-preflight-errors=NumCPU| tee kubeadm-init.log
+  kubeadm init --config=kubeadm-config.yaml --upload-certs --ignore-preflight-errors=NumCPU | tee kubeadm-init.log
   ```
 
 
@@ -312,7 +312,7 @@ kubeadm init --config=kubeadm-config.yaml --experimental-upload-certs | tee kube
   * 增加参数
 
     ```
-    kubeadm init --config=kubeadm-config.yaml --upload-certs --image-repository registry.aliyuncs.com/google_containers --ignore-preflight-errors=NumCPU | tee kubeadm-init.log
+    kubeadm init --config=kubeadm-config.yaml --upload-certs --image-repository=registry.aliyuncs.com/google_containers --ignore-preflight-errors=NumCPU | tee kubeadm-init.log
     ```
 
 
@@ -366,8 +366,8 @@ kubeadm init --config=kubeadm-config.yaml --experimental-upload-certs | tee kube
 ## 五、启动准备
 
 ```sh
-mkdir -p $HOME/.kube
 # 拷贝集群的管理员权限
+mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
@@ -429,7 +429,14 @@ kubeadm join 172.16.134.1:6443 --token abcdef.0123456789abcdef \
     --discovery-token-ca-cert-hash sha256:74c8bd14a97d1a2d14381e0d56576ea71599da10d975949455396e14e125c159 
 ```
 
+如果命令找不到，主节点执行
+
+```
+kubeadm token create --print-join-command
+```
+
 提示加入成功
+
 ```
 This node has joined the cluster:
 * Certificate signing request was sent to apiserver and a response was received.
