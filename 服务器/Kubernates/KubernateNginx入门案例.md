@@ -73,6 +73,21 @@ nginx-deployment   2/2     2            2           169m
 kubectl expose deployment nginx-deployment --port=80 --target-port=80
 ```
 
+默认端口是30000-32767，需要更改为80-32767
+
+vim /etc/kubernetes/manifests/kube-apiserver.yaml
+
+```sh
+# 添加
+--service-node-port-range=80-32767
+
+# 重启
+systemctl daemon-reload
+systemctl restart kubelet
+```
+
+
+
 查看端口映射
 
 ```sh
@@ -88,7 +103,7 @@ TCP  10.101.250.107:80 rr
 
 这个时候，curl三个IP+端口，都可以看到请求
 
-# 三、宿主机ip端口绑定
+## 三、宿主机ip端口绑定
 
 ```
 [root@node01 container]# kubectl get svc

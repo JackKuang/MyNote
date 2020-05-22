@@ -32,7 +32,7 @@ chmod 777 /share
 
 ```sh
 # vim /etc/exports
-/1 192.168.43.0/24 (rw,sync,no_root_squash)   
+/share 172.16.134.1/24(rw,sync,no_root_squash)   
 /1                          #代表共享出来的目录
 192.168.43.0/24   #允许192.168.43.0/24的网络访问此共享。
 rw                         #表示权限 读写
@@ -67,14 +67,23 @@ yum -y install nfs-utils
 yum -y install rpcbind
 systemctl start rpcbind
 systemctl enable rpcbind
+systemctl start nfs
+systemctl enable nfs
 ```
 
 ### 8. 创建挂载点，查看，并且挂载
 
-```
+```sh
 mkdir /data
 showmount -e 172.16.134.1
 mount -t nfs 172.16.134.1:/share /data
+
+# 开机启动
+vim /etc/fstab
+# 添加磁盘挂载
+172.16.134.1:/share     /data nfs defaults      0       0
+# 立即生效
+mount -a 
 ```
 
 ### 9. 测试文件
@@ -84,3 +93,55 @@ date > now
 cat now
 ```
 
+## 异常
+
+### 1. rpcbind无法启动
+
+```
+    [root@node02 html]# systemctl start rpcbind
+    A dependency job for rpcbind.service failed. See 'journalctl -xe' for details.
+
+```
+
+* 修改 /etc/sysctl.conf 文件
+
+```shell
+# 添加如下两行
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+```
+
+* 修改 rpcbind.socket 文件
+  * 首先查找 rpcbind.socket 文件路径
+
+```shell
+find /etc/ -name '*rpcbind.socket*'
+vim /etc/systemd/system/sockets.target.wants/rpcbind.socket
+```
+
+* 编辑 /etc/systemd/system/sockets.target.wants/rpcbind.socket 文件，将其中 ListenStream 关于IPv6的部分注释掉，如下：
+
+```shell
+[Unit]
+Description=RPCbind Server Activation Socket
+
+[Socket]
+ListenStream=/var/run/rpcbind.sock
+
+# RPC netconfig can't handle ipv6/ipv4 dual sockets
+BindIPv6Only=ipv6-only
+ListenStream=0.0.0.0:111
+ListenDatagram=0.0.0.0:111
+#ListenStream=[::]:111
+#ListenDatagram=[::]:111
+
+[Install]
+WantedBy=sockets.target
+```
+
+* 重新启动 nfs 服务
+
+```shell
+systemctl daemon-reload
+systemctl restart nfs
+```
