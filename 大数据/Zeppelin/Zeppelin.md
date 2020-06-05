@@ -66,7 +66,7 @@ bin/zeppelin-daemon.sh start
 
 ### 4.1 Flink
 
-下载Flink，一定要使用Flink的Scala2.11版本，2.12版本暂不支持。
+下载Flink，一定要使用Flink 1.10的Scala2.11版本，2.12版本暂不支持。
 
 ```sh
 # 下载
@@ -89,7 +89,7 @@ tar -zxvf flink-1.10.1-bin-scala_2.11.tgz
 
 ```sh
 # vim flink-conf.yaml 
-rest.port: 50100-50200
+rest.port: 8082
 ```
 
 再次运行，就可以local方式执行flink任务了。
@@ -98,7 +98,7 @@ rest.port: 50100-50200
 
 * Python
 
-  * 由于linux默认Python版本为Python2，需要安装3之后更改配置
+  * 由于linux默认Python版本为Python2，需要安装3之后更改配置，配置完成之后重启Interpreter
 
     ![image-20200602211127104](Zeppelin.assets/image-20200602211127104.png)
 
@@ -116,12 +116,12 @@ rest.port: 50100-50200
 
 * Remote
 
-  * 提交任务到Flink StandAlone或者时Flink Session on yarn
+  * 提交任务到Flink StandAlone集群或者时Flink Session on yarn
 
     ![image-20200602210939355](Zeppelin.assets/image-20200602210939355.png)
 
 * yarn
 
-  * 由Yarn调度运行，per-job
+  * 由Yarn调度运行，per-job模式运行
 
     ![image-20200602210100354](Zeppelin.assets/image-20200602210100354.png)
