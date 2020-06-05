@@ -1,5 +1,3 @@
-
-
 ## HBase中的RIT机制
 
 ### 一、背景
@@ -16,9 +14,11 @@ CDH集群中增加RegionServer的堆栈大小，可根据实际情况酌情增�
 
 服务基本上正常了，在Master管理页面上也能看到节点上线，但是依赖于HBase之上的服务却异常。
 
-Kylin查询功能频繁超时，但是所有的节点服务都是正常的啊？
+但是Kylin查询功能频繁超时，部分Region请求超时，但是所有的节点服务都是正常的啊？
 
-于是，重新看了查了一遍Master服务，发现大量的Region数据在处于RIT状态。![img](HBase中的RIT机制.assets/20190107144914267-1588735928122.png)
+于是，重新看了查了一遍Master服务，发现大量的Region数据在处于RIT状态。
+
+ ![img](HBase中的RIT机制.assets/20190107144914267.png)
 
 而且有一个共性，RIT中的Region块都是在上次宕机那台节点上的。
 
@@ -29,7 +29,7 @@ Kylin查询功能频繁超时，但是所有的节点服务都是正常的啊？
 
 ### 四、导致这种情况的原因
 
-先看日志，日志是最好查询故障的原因。
+先看日志，日志是最好查询故障的原因，很不幸，当时着急关注问题解决，没有观察日志情况，只能在后续上排查问题。
 
 #### 3.1 看看 hdfs中是否有副本丢失
 
@@ -62,7 +62,7 @@ Kylin查询功能频繁超时，但是所有的节点服务都是正常的啊？
 
 * **状态迁移**
 
-  ![%e8%ae%a9](http://hbasefly.com/wp-content/uploads/2016/09/%E8%AE%A9.png)
+  ![close](HBase中的RIT机制.assets/close.png)
 
   如图为所示是Region在close时的状态变迁图，其中红字部分就是发生的各种事件：
 
@@ -105,23 +105,25 @@ Kylin查询功能频繁超时，但是所有的节点服务都是正常的啊？
      let tdArrays = [];
    for (let i = 0; i< tds.length; i++) {
      	if (tds[i] != null) {
-   		let html = tds[i].innerHTML;
+  	 		let html = tds[i].innerHTML;
      		if (html != null && html.indexOf('KYLIN_') > 0) {
      			tdArrays.push(html.trim().split(' state=OPENING')[0]);
      		}
      	}
    }
      tdArrays.join("\";\nassign \"")
+     ````
    ````
   
+   ````
 2. 使用修复工具类
   
    * hbase 2.0之后，不在提供默认的hbck工具类，需要使用hbck2，进行使用
-  
+    
    ```sh
      git  clone  https://github.com/apache/hbase-operator-tools.git
    mvn  clean  package
-     ```
+   ```
   
      ![img](HBase中的RIT机制.assets/20190107144914267.png)
   
@@ -250,4 +252,5 @@ service hbase-master restart
 
 ### 五、总结
 
-* 问题出现了，第一时间去查看日志，
+* 问题出现了，第一时间去查看日志，找到问题之后才处理问题。
+* 需要对HBase中的RegionState增加了解，特别状态切换的。
