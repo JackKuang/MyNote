@@ -252,8 +252,6 @@ PUT /blog/article/1?pretty
 {"id": "1", "title": "What is lucene"}
 ```
 
-
-
 ### 5.3 查询文档
 
 ```sh
@@ -586,8 +584,480 @@ PUT /school3
   	"number_of_shards": 3
   }
 }
+```
+
+## 九、分页解决方案
+
+```sh
+# 导入数据
+DELETE /us
+PUT /us
+POST /_bulk
+{ "create": { "_index": "us", "_type": "tweet", "_id": "1" }}
+{ "email" : "john@smith.com", "name" : "John Smith", "username" : "@john" }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "2" }}
+{ "email" : "mary@jones.com", "name" : "Mary Jones", "username" : "@mary" }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "3" }}
+{ "date" : "2014-09-13", "name" : "Mary Jones", "tweet" : "Elasticsearch means full text search has never been so easy", "user_id" : 2 }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "4" }}
+{ "date" : "2014-09-14", "name" : "John Smith", "tweet" : "@mary it is not just text, it does everything", "user_id" : 1 }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "5" }}
+{ "date" : "2014-09-15", "name" : "Mary Jones", "tweet" : "However did I manage before Elasticsearch?", "user_id" : 2 }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "6" }}
+{ "date" : "2014-09-16", "name" : "John Smith",  "tweet" : "The Elasticsearch API is really easy to use", "user_id" : 1 }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "7" }}
+{ "date" : "2014-09-17", "name" : "Mary Jones", "tweet" : "The Query DSL is really powerful and flexible", "user_id" : 2 }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "8" }}
+{ "date" : "2014-09-18", "name" : "John Smith", "user_id" : 1 }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "9" }}
+{ "date" : "2014-09-19", "name" : "Mary Jones", "tweet" : "Geo-location aggregations are really cool", "user_id" : 2 }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "10" }}
+{ "date" : "2014-09-20", "name" : "John Smith", "tweet" : "Elasticsearch surely is one of the hottest new NoSQL products", "user_id" : 1 }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "11" }}
+{ "date" : "2014-09-21", "name" : "Mary Jones", "tweet" : "Elasticsearch is built for the cloud, easy to scale", "user_id" : 2 }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "12" }}
+{ "date" : "2014-09-22", "name" : "John Smith", "tweet" : "Elasticsearch and I have left the honeymoon stage, and I still love her.", "user_id" : 1 }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "13" }}
+{ "date" : "2014-09-23", "name" : "Mary Jones", "tweet" : "So yes, I am an Elasticsearch fanboy", "user_id" : 2 }
+{ "create": { "_index": "us", "_type": "tweet", "_id": "14" }}
+{ "date" : "2014-09-24", "name" : "John Smith", "tweet" : "How many more cheesy tweets do I have to write?", "user_id" : 1 }
 
 ```
+
+### 9.1 size+from浅分页
+
+按照一般的查询流程来说，如果我想查询前10条数据：
+
+1. 客户端请求发给某个节点
+2. 节点转发给个个分片，查询每个分片上的前10条
+3. 结果返回给节点，整合数据，提取前10条
+4. 返回给请求客户端
+
+**from**定义了目标数据的偏移值
+
+**size**定义当前返回的事件数目
+
+```sh
+GET /us/_search?pretty
+{
+  "from" : 0 , "size" : 5
+}
+
+GET /us/_search?pretty
+{
+  "from" : 5 , "size" : 5
+}
+
+```
+
+这种浅分页只适合少量数据，因为随from增大，查询的时间就会越大，而且数据量越大，查询的效率指数下降；
+
+* **优点**：from+size在数据量不大的情况下，效率比较高
+
+* **缺点**：在数据量非常大的情况下，from+size分页会把全部记录加载到内存中，这样做不但运行速递特别慢，而且容易让es出现内存不足而挂掉
+
+### 9.2 Scroll 深分页
+
+* 对于上面介绍的浅分页，当Elasticsearch响应请求时，它必须确定docs的顺序，排列响应结果。
+
+* 如果请求的页数较少（假设每页20个docs）, Elasticsearch不会有什么问题，但是如果页数较大时，比如请求第20页，Elasticsearch不得不取出第1页到第20页的所有docs，再去除第1页到第19页的docs，得到第20页的docs。
+
+* 解决的方式就是使用scroll，**scroll就是维护了当前索引段的一份快照信息—缓存**（这个快照信息是你执行这个scroll查询时的快照）。
+
+* 可以把 scroll 分为初始化和遍历两步：
+
+  1. 初始化时将所有符合搜索条件的搜索结果缓存起来，可以想象成快照；
+
+     ```sh
+     # 其中的scroll=3m代表当前查询的数据缓存3分钟
+     # 代表当前查询3条数据
+     GET us/_search?scroll=3m
+     { 
+     	"query": {"match_all": {}},
+      	"size": 3
+     }
+     ```
+
+  2. 遍历时，从这个快照里取数据；
+
+     ```sh
+     # 在遍历时候，拿到上一次遍历中的scrollid，然后带scroll参数，重复上一次的遍历步骤，知道返回的数据为空，就表示遍历完成
+     GET /_search/scroll
+     {
+       "scroll" : "1m",
+       "scroll_id" : "FGluY2x1ZGVfY29udGV4dF91dWlkDXF1ZXJ5QW5kRmV0Y2gBFFlFZUQwbklCM3JCQXZCeXJDMmJPAAAAAAAAGmIWRkltMzVXNkhTVHE0X0hUNWZyR1EwZw=="
+     }
+     ```
+
+* 每次都要传参数scroll，刷新搜索结果的缓存时间，另外不需要指定index和type（**不要把缓存的时时间设置太长，占用内存**）
+
+**对比：**
+
+* 浅分页，每次查询都会去索引库（本地文件夹）中查询pageNum*page条数据，然后截取掉前面的数据，留下最后的数据。 这样的操作在每个分片上都会执行，最后会将多个分片的数据合并到一起，再次排序，截取需要的。
+* 深分页，可以一次性将所有满足查询条件的数据，都放到内存中。分页的时候，在内存中查询。相对浅分页，就可以避免多次读取磁盘。
+
+## 十、ES的中文分词器IK
+
+* 下载
+
+  ```sh
+  wget https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.8.0/elasticsearch-analysis-ik-7.8.0.zip
+  ```
+
+* 创建文件夹
+  ```sh
+  # cd ES_HOME
+  mkdir -p plugins/analysis-ik
+  ```
+
+* 解压到创建的目录
+  ```sh
+  unzip elasticsearch-analysis-ik-6.7.0.zip  -d plugins/analysis-ik/
+  ```
+
+* 当然也可以直接安装
+
+  ```sh
+  ./bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v6.3.0/elasticsearch-analysis-ik-6.3.0.zip
+  ```
+
+* 重启ES集群
+
+*  创建索引库并配置IK分词器
+
+  ```sh
+  DELETE iktest
+  PUT /iktest?pretty
+  {
+      "settings" : {
+          "analysis" : {
+              "analyzer" : {
+                  "ik" : {
+                      "tokenizer" : "ik_max_word"
+                  }
+              }
+          }
+      },
+      "mappings" : {
+          "dynamic" : true,
+          "properties" : {
+                  "subject" : {
+                      "type" : "text",
+                      "analyzer" : "ik_max_word"
+              }
+          }
+      }
+  }
+  ```
+
+* 查看分词效果
+
+  ```sh
+  GET _analyze?pretty
+  {
+      "analyzer": "ik_max_word",
+      "text": "特朗普是美国总统"
+  }
+  
+  ```
+
+* 插入数据
+
+  ```sh
+  POST /iktest/_bulk?pretty
+  { "index" : { "_id" : "1" } }
+  {"subject" : "＂闺蜜＂崔顺实被韩检方传唤 韩总统府促彻查真相" }
+  { "index" : { "_id" : "2" } }
+  {"subject" : "韩举行＂护国训练＂ 青瓦台:决不许国家安全出问题" }
+  { "index" : { "_id" : "3" } }
+  {"subject" : "媒体称FBI已经取得搜查令 检视希拉里电邮" }
+  { "index" : { "_id" : "4" } }
+  {"subject" : "村上春树获安徒生奖 演讲中谈及欧洲排外问题" }
+  { "index" : { "_id" : "5" } }
+  {"subject" : "希拉里团队炮轰FBI 参院民主党领袖批其”违法”" }
+  ```
+
+* 分词搜索
+
+  ```sh
+  POST /iktest/_search?pretty
+  {
+      "query" : { "match" : { "subject" : "希拉里和韩国" }},
+      "highlight" : {
+          "pre_tags" : ["<font color=red>"],
+          "post_tags" : ["</font>"],
+          "fields" : {
+              "subject" : {}
+          }
+      }
+  }
+  
+  ```
+
+* 热词更新
+
+  ```sh
+  GET _analyze?pretty
+  {
+      "analyzer": "ik_max_word",
+      "text": "特朗普"
+  }
+  三个字是分开的
+  ```
+
+  * 部署一个web服务，比方说是tomcat，或者nginx
+
+    ```sh
+    [root@localhost www]# curl 192.168.0.146/hot.doc
+    特朗普
+    ```
+
+  * 修改配置文件IKAnalyzer.cfg.xml
+
+    ```xml
+    #vim plugins/analysis-ik/config/
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+    <properties>
+            <comment>IK Analyzer 扩展配置</comment>
+            <!--用户可以在这里配置自己的扩展字典 -->
+            <entry key="ext_dict"></entry>
+             <!--用户可以在这里配置自己的扩展停止词字典-->
+            <entry key="ext_stopwords"></entry>
+            <!--用户可以在这里配置远程扩展字典 -->
+            <entry key="remote_ext_dict">http://192.168.0.146/hot.doc</entry>
+            <!--用户可以在这里配置远程扩展停止词字典-->
+            <!-- <entry key="remote_ext_stopwords">words_location</entry> -->
+    </properties>
+    ```
+
+## 十一、Java操作ES
+
+### 11.1 引入Maven依赖
+
+```xml
+
+    <dependencies>
+
+        <!-- 老版本，es8.0.0将不支持-->
+        <!--<dependency>-->
+            <!--<groupId>org.elasticsearch.client</groupId>-->
+            <!--<artifactId>transport</artifactId>-->
+            <!--<version>7.8.0</version>-->
+        <!--</dependency>-->
+
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+            <version>7.8.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.9.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.3.0-M1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.47</version>
+        </dependency>
+
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+```
+
+### 11.2 初始化连接
+
+```java
+
+
+    private RestHighLevelClient client;
+
+    @BeforeEach
+    public void init() {
+        client = new RestHighLevelClient(
+                RestClient.builder(
+                        new HttpHost("192.168.0.146", 9200, "http"));
+    }
+
+
+    @AfterEach
+    public void close() throws IOException {
+        client.close();
+    }
+```
+
+### 11.2 添加索引
+
+```java
+
+    @Test
+    public void addDocument1() throws IOException {
+        IndexRequest request = new IndexRequest("javaapi");
+        request.id("1");
+        String jsonString = "{" +
+                "\"user\":\"kimchy\"," +
+                "\"postDate\":\"2013-01-30\"," +
+                "\"message\":\"trying out Elasticsearch\"" +
+                "}";
+        request.source(jsonString, XContentType.JSON);
+        client.index(request, RequestOptions.DEFAULT);
+    }
+
+    @Test
+    public void addDocument2() throws IOException {
+        Map<String, Object> jsonMap = new HashMap<>();
+        jsonMap.put("user", "kimchy");
+        jsonMap.put("postDate", new Date());
+        jsonMap.put("message", "trying out Elasticsearch");
+        IndexRequest request = new IndexRequest("javaapi")
+                .id("2").source(jsonMap);
+        client.index(request, RequestOptions.DEFAULT);
+    }
+
+    @Test
+    public void addDocument3() throws IOException {
+        XContentBuilder builder = XContentFactory.jsonBuilder();
+        builder.startObject();
+        {
+            builder.field("user", "kimchy");
+            builder.timeField("postDate", new Date());
+            builder.field("message", "trying out Elasticsearch");
+        }
+        builder.endObject();
+        IndexRequest request = new IndexRequest("javaapi")
+                .id("3").source(builder);
+        client.index(request, RequestOptions.DEFAULT);
+    }
+
+
+    @Test
+    public void addDocument4() throws IOException {
+        IndexRequest request = new IndexRequest("javaapi")
+                .id("4")
+                .source("user", "kimchy",
+                        "postDate", new Date(),
+                        "message", "trying out Elasticsearch");
+        client.index(request, RequestOptions.DEFAULT);
+    }
+
+	// 批量添加
+    @Test
+    public void addDocumentBulk() throws IOException {
+        BulkRequest request = new BulkRequest();
+        // addDocument1
+        request.add(new IndexRequest("javaapi").id("5")
+                .source(XContentType.JSON, "user", "user5"));
+
+        // addDocument2
+        Map<String, Object> jsonMap = new HashMap<>();
+        jsonMap.put("user", "user6");
+        request.add(new IndexRequest("javaapi").id("6")
+                .source(jsonMap));
+
+
+        // addDocument3
+        request.add(new IndexRequest("javaapi").id("7")
+                .source(XContentFactory.jsonBuilder()
+                        .startObject()
+                        .field("user", "user7")
+                        .endObject()
+                ));
+
+
+        // addDocument4
+        request.add(new IndexRequest("javaapi").id("8")
+                .source("user", "user8"));
+
+        client.bulk(request,RequestOptions.DEFAULT);
+
+    }
+```
+
+### 11.3 查询数据
+
+```java
+	//根据id查询
+    @Test
+    public void getById() throws IOException {
+        GetRequest getRequest = new GetRequest("javaapi", "1");
+        GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
+        System.out.println("index:" + getResponse.getIndex());
+        System.out.println("id:" + getResponse.getId());
+        System.out.println("source" + getResponse.getSourceAsString());
+    }
+
+	// 复杂查询
+    @Test
+    public void getData() throws IOException{
+        SearchRequest request = new SearchRequest("javaapi");
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+//        查询全部
+//        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+
+//       范围查询
+//       searchSourceBuilder.query(QueryBuilders.rangeQuery("age").gt("12").lt("20"));
+
+//        精确查询
+//        searchSourceBuilder.query(QueryBuilders.termQuery("user","user5"));
+//          也可以这么写
+//        searchSourceBuilder.query(new TermQueryBuilder("user","user5"));
+
+//        纠正查询（英文）最大纠正次数两次
+//        searchSourceBuilder.query(new FuzzyQueryBuilder("user","usar5"));
+
+//        通配符查询 *多个，?一个
+//        searchSourceBuilder.query(new WildcardQueryBuilder("user","user*"));
+
+
+
+//        bool组合查询
+//        RangeQueryBuilder age = QueryBuilders.rangeQuery("age").gt(17).lt(29);
+//        TermQueryBuilder sex = QueryBuilders.termQuery("sex", "1");
+//        RangeQueryBuilder id = QueryBuilders.rangeQuery("id").gt("9").lt("15");
+//
+//        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery()
+//                .should(age)
+//                .must(sex)
+//                .mustNot(id);
+//        searchSourceBuilder.query(boolQueryBuilder);
+
+
+
+        request.source(searchSourceBuilder);
+        SearchResponse search = client.search(request, RequestOptions.DEFAULT);
+        for(SearchHit searchHit:search.getHits().getHits()) {
+            System.out.println("================");
+            System.out.println("index:" + searchHit.getIndex());
+            System.out.println("id:" + searchHit.getId());
+            System.out.println("source" + searchHit.getSourceAsString());
+        }
+    }
+```
+
+### 11.5 更多
+
+操作文档参考，ES官网：https://www.elastic.co/guide/en/elasticsearch/client/java-rest/7.8/java-rest-high-supported-apis.html
 
 
 
