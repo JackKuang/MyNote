@@ -509,6 +509,24 @@ GET /school/student/_search?pretty
 }
 ```
 
+### 6.4 高亮查询
+
+```sh
+# 查询结果高亮显示
+POST /school/student/_search?pretty
+{
+    "query" : { "match" : { "about": "travel" }},
+    "highlight" : {
+        "pre_tags" : ["<font color=red>"],
+        "post_tags" : ["</font>"],
+        "fields" : {
+            "about" : {}
+        }
+    }
+}
+
+```
+
 
 
 ## 七、定义字段类型 mappings
@@ -777,7 +795,7 @@ GET /us/_search?pretty
   {"subject" : "希拉里团队炮轰FBI 参院民主党领袖批其”违法”" }
   ```
 
-* 分词搜索
+* 分词搜索+高亮
 
   ```sh
   POST /iktest/_search?pretty
@@ -1055,7 +1073,139 @@ GET /us/_search?pretty
     }
 ```
 
-### 11.5 更多
+### 11.4 分页查询
+
+```java
+
+    /**
+     * size+from浅分页
+     * @throws IOException
+     */
+    @Test
+    public void page() throws IOException {
+        int  pageSize = 5;
+        int pageNum = 2;
+        int startNum = (pageNum-1)*5;
+        SearchRequest searchRequest = new SearchRequest("javaapi");
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.from(startNum);
+        searchSourceBuilder.size(pageSize);
+        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+        for(SearchHit searchHit:searchResponse.getHits()) {
+            System.out.println("================");
+            System.out.println("index:" + searchHit.getIndex());
+            System.out.println("id:" + searchHit.getId());
+            System.out.println("source" + searchHit.getSourceAsString());
+        }
+    }
+
+    /**
+     *  Scroll 深分页
+     * @throws IOException
+     */
+    @Test
+    public void pageScroll() throws IOException {
+        int size = 2;
+        SearchRequest searchRequest = new SearchRequest("javaapi");
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+        searchSourceBuilder.size(size);
+        searchRequest.source(searchSourceBuilder);
+        searchRequest.scroll(TimeValue.timeValueMinutes(1L));
+        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+        String scrollId = searchResponse.getScrollId();
+        for(SearchHit searchHit:searchResponse.getHits()) {
+            System.out.println("================");
+            System.out.println("index:" + searchHit.getIndex());
+            System.out.println("id:" + searchHit.getId());
+            System.out.println("source" + searchHit.getSourceAsString());
+        }
+        System.out.println("================");
+        System.out.println(scrollId);
+        System.out.println("================");
+
+
+        SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+        scrollRequest.scroll(TimeValue.timeValueSeconds(30));
+        SearchResponse searchScrollResponse = client.scroll(scrollRequest, RequestOptions.DEFAULT);
+        scrollId = searchScrollResponse.getScrollId();
+        for(SearchHit searchHit:searchScrollResponse.getHits()) {
+            System.out.println("================");
+            System.out.println("index:" + searchHit.getIndex());
+            System.out.println("id:" + searchHit.getId());
+            System.out.println("source" + searchHit.getSourceAsString());
+        }
+        System.out.println("================");
+        System.out.println(scrollId);
+        System.out.println("================");
+    }
+
+```
+
+### 11.5 高亮
+
+```java
+
+    /**
+     * 高亮
+     * @throws IOException
+     */
+    @Test
+    public void highLight() throws IOException {
+
+        SearchRequest searchRequest = new SearchRequest("javaapi");
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.termQuery("user","user6"));
+        HighlightBuilder highlightBuilder = new HighlightBuilder();
+        highlightBuilder.field("user");
+        highlightBuilder.preTags("<font>");
+        highlightBuilder.postTags("</font>");
+        searchSourceBuilder.highlighter(highlightBuilder);
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchScrollResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+        for(SearchHit searchHit:searchScrollResponse.getHits()) {
+            System.out.println("================");
+            System.out.println("index:" + searchHit.getIndex());
+            System.out.println("id:" + searchHit.getId());
+            System.out.println("source:" + searchHit.getSourceAsString());
+            Text[] users = searchHit.getHighlightFields().get("user").getFragments();
+            for(Text text : users){
+                System.out.println(text);
+            }
+        }
+    }
+```
+
+### 11.5 分组查询
+
+```java
+
+        @Test
+        public void aggregation() throws IOException {
+
+            SearchRequest searchRequest = new SearchRequest("javaapi");
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+//        TermsAggregationBuilder termsAggregationBuilder = AggregationBuilders.terms("user_count")
+//                .field("user");
+            TermsAggregationBuilder termsAggregationBuilder = AggregationBuilders.terms("user_count")
+                    .field("message");
+            searchSourceBuilder.aggregation(termsAggregationBuilder);
+            searchRequest.source(searchSourceBuilder);
+            SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+
+            Aggregations aggregations = searchResponse.getAggregations();
+            for (Aggregation aggregation : aggregations) {
+                System.out.println(aggregation.toString());
+                StringTerms stringTerms = (StringTerms) aggregation;
+                List<StringTerms.Bucket> buckets = stringTerms.getBuckets();
+                for (StringTerms.Bucket bucket : buckets) {
+                    System.out.println(bucket.getKey());
+                    System.out.println(bucket.getDocCount());
+                }
+            }
+```
+
+### 11.6 更多
 
 操作文档参考，ES官网：https://www.elastic.co/guide/en/elasticsearch/client/java-rest/7.8/java-rest-high-supported-apis.html
 
