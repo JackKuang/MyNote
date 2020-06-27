@@ -1090,6 +1090,7 @@ GET /us/_search?pretty
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.from(startNum);
         searchSourceBuilder.size(pageSize);
+        searchRequest.source(searchSourceBuilder);
         SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
         for(SearchHit searchHit:searchResponse.getHits()) {
             System.out.println("================");
@@ -1180,34 +1181,616 @@ GET /us/_search?pretty
 
 ```java
 
-        @Test
-        public void aggregation() throws IOException {
 
-            SearchRequest searchRequest = new SearchRequest("javaapi");
-            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-//        TermsAggregationBuilder termsAggregationBuilder = AggregationBuilders.terms("user_count")
-//                .field("user");
-            TermsAggregationBuilder termsAggregationBuilder = AggregationBuilders.terms("user_count")
-                    .field("message");
-            searchSourceBuilder.aggregation(termsAggregationBuilder);
-            searchRequest.source(searchSourceBuilder);
-            SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+    /**
+     * 单个维度
+     * @throws IOException
+     */
+    @Test
+    public void aggregation() throws IOException {
+        SearchRequest searchRequest = new SearchRequest("javaapi");
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        TermsAggregationBuilder termsAggregationBuilder = AggregationBuilders.terms("user_count")
+                .field("user");
+        searchSourceBuilder.aggregation(termsAggregationBuilder);
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
 
-            Aggregations aggregations = searchResponse.getAggregations();
-            for (Aggregation aggregation : aggregations) {
-                System.out.println(aggregation.toString());
-                StringTerms stringTerms = (StringTerms) aggregation;
-                List<StringTerms.Bucket> buckets = stringTerms.getBuckets();
-                for (StringTerms.Bucket bucket : buckets) {
-                    System.out.println(bucket.getKey());
-                    System.out.println(bucket.getDocCount());
+        Aggregations aggregations = searchResponse.getAggregations();
+        for (Aggregation aggregation : aggregations) {
+            System.out.println(aggregation.toString());
+            StringTerms stringTerms = (StringTerms) aggregation;
+            List<StringTerms.Bucket> buckets = stringTerms.getBuckets();
+            for (StringTerms.Bucket bucket : buckets) {
+                System.out.println(bucket.getKey());
+                System.out.println(bucket.getDocCount());
+            }
+        }
+
+    }
+
+    /**
+     * 多维度
+     * @throws IOException
+     */
+
+    @Test
+    public void subAggregation() throws IOException {
+        SearchRequest searchRequest = new SearchRequest("javaapi");
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        TermsAggregationBuilder termsAggregationBuilder = AggregationBuilders.terms("user_count")
+                .field("user");
+        TermsAggregationBuilder subAggregation = AggregationBuilders.terms("address_count")
+                .field("address");
+//        MaxAggregationBuilder maxAge= AggregationBuilders.max("max_age")
+//                .field("age");
+//        termsAggregationBuilder.subAggregation(maxAge);
+        termsAggregationBuilder.subAggregation(subAggregation);
+        searchSourceBuilder.aggregation(termsAggregationBuilder);
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+
+        Aggregations aggregations = searchResponse.getAggregations();
+        for (Aggregation aggregation : aggregations) {
+            StringTerms stringTerms = (StringTerms) aggregation;
+            List<StringTerms.Bucket> buckets = stringTerms.getBuckets();
+            for (StringTerms.Bucket bucket : buckets) {
+                System.out.println(bucket.getKey());
+                System.out.println(bucket.getDocCount());
+
+                Aggregation address_count = bucket.getAggregations().get("address_count");
+                if (null != address_count) {
+                    StringTerms positionTerm = (StringTerms) address_count;
+                    List<StringTerms.Bucket> buckets1 = positionTerm.getBuckets();
+                    for (StringTerms.Bucket bucket1 : buckets1) {
+                        System.out.println(bucket1.getKey());
+                        System.out.println(bucket1.getDocCount());
+                    }
                 }
             }
+        }
+
 ```
 
 ### 11.6 更多
 
 操作文档参考，ES官网：https://www.elastic.co/guide/en/elasticsearch/client/java-rest/7.8/java-rest-high-supported-apis.html
 
+## 十二、ES地理位置搜索
 
+* 创建索引库
 
+  ```sh
+  PUT platform_foreign_website
+  {
+    "mappings": {
+        "properties": {
+           "id": {
+              "type": "text"
+              },
+            "storeName": {
+              "type": "text"
+            },
+            "location":{
+              "type": "geo_point"
+            }
+      }
+    }
+  }
+  ```
+
+* 添加数据
+
+  ```sh
+  40.0488115498,116.4320345091
+  PUT /platform_foreign_website/_doc/40?pretty
+  {"id": "40", "storeName": "北京市北京市朝阳区清河营东路2号院","longitude":116.4320345091,"latitude":40.0488115498,"isdelete":true,"location":{
+      "lat":40.0488115498,
+      "lon":116.4320345091
+    
+  }
+  }
+  
+  40.0461174292,116.4360685514
+  PUT /platform_foreign_website/_doc/41?pretty
+  {"id": "40", "storeName": "北京市北京市朝阳区北苑东路","longitude":116.4360685514,"latitude":40.0461174292,"isdelete":false,"location":{
+      "lat":40.0461174292,
+      "lon":116.4360685514
+    
+  }
+  }
+  
+  40.0519526142,116.4178513254
+  PUT /platform_foreign_website/_doc/42?pretty
+  {"id": "42", "storeName": "北京市北京市朝阳区立通路","longitude":116.4178513254,"latitude":40.0519526142,"isdelete":true,"location":{
+      "lat":40.0519526142,
+      "lon":116.4178513254
+    
+  }
+  }
+  
+  40.0503813013,116.4562592119
+  PUT /platform_foreign_website/_doc/43?pretty
+  {"id": "43", "storeName": "北京市北京市朝阳区来广营北路","longitude":116.4562592119,"latitude":40.0503813013,"isdelete":false,"location":{
+      "lat":40.0503813013,
+      "lon":116.4562592119
+    
+  }
+  }
+  
+  40.0385828363,116.4465266673
+  PUT /platform_foreign_website/_doc/44?pretty
+  {"id": "44", "storeName": "北京市北京市朝阳区顺白路","longitude":116.4465266673,"latitude":40.0385828363,"isdelete":false,"location":{
+      "lat":40.0385828363,
+      "lon":116.4465266673
+    
+  }
+  }
+  
+  
+  
+  PUT /platform_foreign_website/_doc/51?pretty
+  {"id": "44", "storeName": "A","longitude":110,"latitude":40,"isdelete":false,"location":{
+      "lat":40,
+      "lon":110
+    
+  }
+  }
+  
+  PUT /platform_foreign_website/_doc/52?pretty
+  {"id": "44", "storeName": "B","longitude":110,"latitude":50,"isdelete":false,"location":{
+      "lat":50,
+      "lon":110
+  }
+  }
+  
+  
+  PUT /platform_foreign_website/_doc/53?pretty
+  {"id": "44", "storeName": "C","longitude":120,"latitude":40,"isdelete":false,"location":{
+      "lat":40,
+      "lon":120
+  }
+  }
+  
+  PUT /platform_foreign_website/_doc/54?pretty
+  {"id": "44", "storeName": "D","longitude":120,"latitude":50,"isdelete":false,"location":{
+      "lat":50,
+      "lon":120
+  }
+  }
+  
+  ```
+
+* 查询所有数据
+
+  ```sh
+  GET /platform_foreign_website/_search?pretty
+  {
+      "query": {
+          "match_all": {}
+      }
+  }
+  ```
+
+* 添加maven依赖
+
+  ```xml
+  <!-- https://mvnrepository.com/artifact/org.locationtech.spatial4j/spatial4j -->
+  <dependency>
+      <groupId>org.locationtech.spatial4j</groupId>
+      <artifactId>spatial4j</artifactId>
+      <version>0.7</version>
+  </dependency>
+  <dependency>
+      <groupId>com.vividsolutions</groupId>
+      <artifactId>jts</artifactId>
+      <version>1.13</version>
+      <exclusions>
+          <exclusion>
+              <groupId>xerces</groupId>
+              <artifactId>xercesImpl</artifactId>
+          </exclusion>
+      </exclusions>
+  </dependency>
+  ```
+
+* Java代码下实现
+
+  ```java
+  import org.apache.http.HttpHost;
+  import org.elasticsearch.action.search.SearchRequest;
+  import org.elasticsearch.action.search.SearchResponse;
+  import org.elasticsearch.client.RequestOptions;
+  import org.elasticsearch.client.RestClient;
+  import org.elasticsearch.client.RestHighLevelClient;
+  import org.elasticsearch.common.geo.GeoPoint;
+  import org.elasticsearch.common.unit.DistanceUnit;
+  import org.elasticsearch.index.query.*;
+  import org.elasticsearch.search.SearchHit;
+  import org.elasticsearch.search.builder.SearchSourceBuilder;
+  import org.junit.jupiter.api.AfterEach;
+  import org.junit.jupiter.api.BeforeEach;
+  import org.junit.jupiter.api.Test;
+  
+  import java.io.IOException;
+  import java.util.*;
+  
+  /**
+   * 地理位置搜索
+   * @author Jack
+   * @date 2020/6/21 17:00
+   */
+  public class EsGeoOperate {
+  
+      private RestHighLevelClient client;
+  
+      @BeforeEach
+      public void init() {
+          client = new RestHighLevelClient(
+                  RestClient.builder(
+                          new HttpHost("192.168.0.146", 9200, "http")));
+      }
+  
+  
+      @AfterEach
+      public void close() throws IOException {
+          client.close();
+      }
+  
+      /**
+       * 边界框搜索
+       * @throws IOException
+       */
+      @Test
+      public void geoBoundingBoxQuery() throws IOException {
+          SearchRequest searchRequest = new SearchRequest("platform_foreign_website");
+          SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+          GeoBoundingBoxQueryBuilder location = QueryBuilders.geoBoundingBoxQuery("location").setCorners(40.0519526142, 116.4178513254, 40.0385828363, 116.4465266673);
+          searchSourceBuilder.query(location);
+          searchRequest.source(searchSourceBuilder);
+          SearchResponse search = client.search(searchRequest, RequestOptions.DEFAULT);
+          for (SearchHit hit : search.getHits().getHits()) {
+              System.out.println(hit.getSourceAsString());
+          }
+      }
+  
+  
+      /**
+       * 多边形框搜索
+       * @throws IOException
+       */
+      @Test
+      public void geoPolygonQuery() throws IOException {
+          SearchRequest searchRequest = new SearchRequest("platform_foreign_website");
+          SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+          List<GeoPoint> points = new ArrayList<GeoPoint>();
+          points.add(new GeoPoint(40.0519526142, 116.4178513254));
+          points.add(new GeoPoint(40.0503813013,116.4562592119));
+          points.add(new GeoPoint(40.0385828363, 116.4465266673));
+          GeoPolygonQueryBuilder location = QueryBuilders.geoPolygonQuery("location", points);
+          searchSourceBuilder.query(location);
+          searchRequest.source(searchSourceBuilder);
+          SearchResponse search = client.search(searchRequest, RequestOptions.DEFAULT);
+          for (SearchHit hit : search.getHits().getHits()) {
+              System.out.println(hit.getSourceAsString());
+          }
+      }
+  
+  
+      /**
+       * 圆形范围内搜索
+       * @throws IOException
+       */
+      @Test
+      public void geoDistanceQuery() throws IOException {
+          SearchRequest searchRequest = new SearchRequest("platform_foreign_website");
+          SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+          GeoDistanceQueryBuilder location = QueryBuilders.geoDistanceQuery("location").point(40.0519526142, 116.417851325).distance(200, DistanceUnit.KILOMETERS);
+          searchSourceBuilder.query(location);
+          searchRequest.source(searchSourceBuilder);
+          SearchResponse search = client.search(searchRequest, RequestOptions.DEFAULT);
+          for (SearchHit hit : search.getHits().getHits()) {
+              System.out.println(hit.getSourceAsString());
+          }
+      }
+  
+  
+  }
+  
+  ```
+
+## 十三、ElasticSearch SQL使用
+
+### 13.1 Restful API
+
+```sh
+POST /_sql?format=txt
+{
+  "query":"select * from platform_foreign_website"
+}
+```
+
+![1593244635883](ElasticSearch.assets/1593244635883.png)
+
+### 13.2 客户端连接
+
+```sh
+#三个都可以执行
+./bin/elasticsearch-sql-cli
+./bin/elasticsearch-sql-cli https://some.server:9200
+java -jar elasticsearch-sql-cli-7.8.0.jar 
+```
+
+![1593245386438](ElasticSearch.assets/1593245386438.png)
+
+### 13. JDBC连接
+
+官网教程：https://www.elastic.co/guide/en/elasticsearch/reference/7.8/sql-jdbc.html
+
+* 导入maven依赖
+
+  ```xml
+  <dependency>
+    <groupId>org.elasticsearch.plugin</groupId>
+    <artifactId>x-pack-sql-jdbc</artifactId>
+    <version>7.8.0</version>
+  </dependency>
+  
+  <repositories>
+    <repository>
+      <id>elastic.co</id>
+      <url>https://artifacts.elastic.co/maven</url>
+    </repository>
+  </repositories>
+  ```
+
+* Java实现
+
+  ```java
+  import org.elasticsearch.xpack.sql.jdbc.EsDataSource;
+  import org.junit.jupiter.api.Test;
+  
+  import java.sql.Connection;
+  import java.sql.ResultSet;
+  import java.sql.SQLException;
+  import java.sql.Statement;
+  import java.util.Properties;
+  
+  /**
+   * @author Jack
+   * @date 2020/6/27 16:12
+   */
+  public class EsJdbc {
+      @Test
+      public void esJdbc() throws SQLException {
+          EsDataSource dataSource = new EsDataSource();
+          String address = "jdbc:es://http://192.168.0.146:9200";
+          dataSource.setUrl(address);
+          Properties connectionProperties = new Properties();
+          dataSource.setProperties(connectionProperties);
+          Connection connection = dataSource.getConnection();
+          Statement statement = connection.createStatement();
+          ResultSet resultSet = statement.executeQuery("select id,isdelete,latitude,longitude,storeName,location from platform_foreign_website");
+          while (resultSet.next()) {
+              String id = resultSet.getString(0);
+              Boolean isDelete = resultSet.getBoolean(1);
+              Float latitude = resultSet.getFloat(2);
+              Float longitude = resultSet.getFloat(3);
+              String storeName = resultSet.getString(4);
+              Object location = resultSet.getObject(5);
+              System.out.println(id + "\t" + isDelete + "\t" + latitude + "\t" + longitude + "\t" + storeName + "\t" + location);
+          }
+          connection.close();
+      }
+  }
+  ```
+
+* 异常
+
+  ```java
+  java.sql.SQLInvalidAuthorizationSpecException: current license is non-compliant for [jdbc]
+  
+  	at org.elasticsearch.xpack.sql.client.JreHttpUrlConnection$SqlExceptionType.asException(JreHttpUrlConnection.java:330)
+  	...
+  ```
+
+* 该功能收限制，需要白金版本才可以使用，破解方案参考：https://www.cnblogs.com/hts-technology/p/9282421.html
+
+## 十四、ES集群生产调优
+
+### 14.1 服务器硬件以及内存调优
+
+#### 14.1.1 服务器硬件以及内存调优
+
+* 关闭系统的交换区，禁用linux的虚拟内存，尽量让我们的ES禁用虚拟内存，因为如果使用虚拟内存，就会将内存当中过多的数据缓存到磁盘上面去，可以简单理解为就是拿了一块磁盘出来当做内存使用，这样当然性能就会急剧下降，所以在实际工作当中我们一般的都会尽量关闭linux的交换区的内存空间。
+
+  ```sh
+  关闭交换区的空间大小
+  swapoff -a
+  ```
+
+* 如果不能完全禁用swap交换区的空间大小，我们可以调整设置，尽量减少swap的空间，通过调整交换区内存空间大小，来调整我们的交换比例
+
+  swappiness参数值可设置范围在0到100之间。 低参数值会让内核尽量少用交换，更高参数值会使内核更多的去使用交换空间。默认值为60
+
+  ```sh
+  vim /etc/sysctl.conf
+  vm.swappiness=1
+  ```
+
+* 如果没法更改我们的swap的参数值，那么我们也可以在es当中配置，禁止JVM堆内存当中的数据交换到磁盘当中去。
+
+  ```sh
+  vim ${ES_HOME}/config/elasticsearch.yml
+  bootstrap.memory_lock:true
+  ```
+
+#### 14.1.2 调整普通用户打开文件数以及线程数的限制
+
+*  ES因为需要大量的创建索引文件，需要大量的打开系统的文件，所以我们需要解除linux系统当中打开文件最大数目的限制，不然ES启动就会抛错。
+
+  ```sh
+  # 解除打开文件数据的限制
+  vim /etc/security/limits.conf
+  * soft nofile 65536
+  * hard nofile 131072
+  * soft nproc 2048
+  * hard nproc 4096
+  
+  # 普通用户启动线程数限制
+  vim /etc/sysctl.conf
+  vm.max_map_count=655360
+  fs.file-max=655360
+  ```
+
+* 以上两个问题修改完成之后，一定要重新连接linux生效。关闭secureCRT或者XShell工具，然后重新打开工具连接linux即可
+
+#### 14.1.3 调整ES的JVM堆内存大小
+
+* 官方建议ES的堆内存大小不要超过32GB，超过32GB之后，反而会造成大量的内存的浪费，所以我们在ES当中，JVM堆内存大小，尽量调整成小于32GB，其中堆内存大小与系统内存大小，尽量五五分，例如一台服务器64GB，那么我们可以给ES堆内存大小设置为32GB，剩下的32GB留作OS cache ，当做系统内存留给lucene来使用（因为ES底层也是基于lucene的）。
+*  调整堆内存大小的官方建议：https://www.elastic.co/guide/cn/elasticsearch/guide/current/heap-sizing.html
+
+* ```sh
+  vim ${ES_HOME}/config/jvm.options
+  -Xms32g
+  -Xmx32g
+  ```
+
+### 14.2 ES的参数调优
+
+#### 14.2.1 ES集群自动发现机制
+
+* 配置ES集群的自动发现机制
+
+    ```yaml
+    discovery.zen.ping.unicast.hosts: ["node01", "node02", "node03"] 
+    ```
+
+* 配置在每轮ping操作中等待DNS主机名查找的超时时间。需要指定[时间单位](https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#time-units)，默认为5秒。
+    ```yaml
+    discovery.zen.ping.unicast.resolve_timeout:30
+    ```
+
+#### 14.2.2 集群的主节点选举
+
+* ##### **Master**
+
+  * **主要负责集群中索引的创建、删除以及数据的Rebalance等操作**。Master不负责数据的索引和检索，所以负载较轻。当Master节点失联或者挂掉的时候，ES集群会自动从其他Master节点选举出一个Leader。为了防止脑裂，常常设置参数为discovery.zen.minimum_master_nodes=N/2+1，其中N为集群中Master节点的个数。建议集群中Master节点的个数为奇数个，如3个或者5个。
+
+  *  设置为Master节点的方式如下：
+
+    ```yaml
+    node.master: true    #设置为主节点
+    node.data: false    #不是数据节点
+    node.ingest: false   #不是ingest 节点
+    search.remote.connect: false   #禁用跨集群查询
+    ```
+
+* ##### Data Node
+
+  * **主要负责集群中数据的索引和检索，一般压力比较大。**建议和Master节点分开，避免因为Data Node节点出问题影响到Master节点。
+
+  * 设置一个节点为Data Node节点的方式如下：
+
+    ```yaml
+    node.master: false    #不是主节点
+    node.data: true       #作为数据二级点
+    node.ingest: false    # 不是ingest节点
+    search.remote.connect: false   #禁用跨集群查询
+    ```
+
+* ##### Coordinating Node
+
+  * **协作节点**，主要用于协作处理集群当中的一些事情
+
+    ```yaml
+    node.master: false    #不是主节点
+    node.data: true       #作为数据二级店
+    node.ingest: false    # 不是ingest节点
+    search.remote.connect: false   #禁用跨集群查询
+    ```
+
+* ##### Ingest Node
+
+  *  **Ingest node专门对索引的文档做预处理**，实际中不常用，除非文档在索引之前有大量的预处理工作需要做
+
+    ```yaml
+    node.master: false
+    node.master: false         
+    node.master: false 
+    node.data: false
+    node.ingest: true
+    search.remote.connect: false
+    ```
+
+* 以上节点当中最重要的就是Master Node，这个节点关系着我们集群的生死存放，我们可以通过设置多个master node作为我们集群当中的主节点，其中多个master node会通过选举机制实现选择一个master node作为active，其他的作为standBy，如果master  active状态的主节点宕机，es会从其他的standBy状态的主节点当中重新选择一个新的作为active状态的节点。 
+
+  控制节点加入某个集群或者开始选举的响应时间(默认3s)
+
+  ```
+  discovery.zen.ping_timeout:3
+  ```
+
+  在网络缓慢时，3秒时间可能不够，这种情况下，需要慎重增加超时时间，增加超时时间会减慢选举进程。
+
+  一旦节点决定加入一个存在的集群，它会发出一个加入请求给主节点，这个请求的超时时间由`discovery.zen.join_time`控制，默认是ping 超时时间`discovery.zen.ping_timeout`)的20倍。
+
+* 当主节点停止或者出现问题，集群中的节点会重新 ping 并选举一个新节点。有时一个节点也许会错误的认为主节点已死，所以这种 ping 操作也可以作为部分网络故障的保护性措施。在这种情况下，节点将只从其他节点监听有关当前活动主节点的信息。
+
+  如果`discovery.zen.master_election.ignore_non_master_pings`设置为`true`时（默认值为`false`），`node.master`为`false`的节点不参加主节点的选举，同时选票也不包含这种节点。
+
+  通过设置`node.master`为`false`，可以将节点设置为非备选主节点，永远没有机会成为主节点。 
+
+  `discovery.zen.minimum_master_nodes`设置了最少有多少个备选主节点参加选举，同时也设置了一个主节点需要控制最少多少个备选主节点才能继续保持主节点身份。如果控制的备选主节点少于`discovery.zen.minimum_master_nodes`个，那么当前主节点下台，重新开始选举。
+
+  `discovery.zen.minimum_master_nodes`必须设置一个恰当的备选主节点值(`quonum`，一般设置 为备选主节点数/2+1)，尽量避免只有两个备选主节点，因为两个备选主节点`quonum`应该为2，那么如果一个节点出现问题，另一个节点的同意人数最多只能为1，永远也不能选举出新的主节点，这时就发生了脑裂现象。
+
+#### 14.2.3 集群的故障检测
+
+有两个故障检测进程在集群的生命周期中一直运行。一个是主节点的，ping集群中所有的其他节点，检查他们是否活着。另一种是每个节点都ping主节点，确认主节点是否仍在运行或者是否需要重新启动选举程序。
+
+使用`discovery.zen.fd`前缀设置来控制故障检测过程，配置如下
+
+| **配置**                       | **描述**                      |
+| ------------------------------ | ----------------------------- |
+| discovery.zen.fd.ping_interval | 节点多久ping一次，默认1s      |
+| discovery.zen.fd.ping_timeout  | 等待响应时间，默认30s         |
+| discovery.zen.fd.ping_retries  | 失败或超时后重试的次数，默认3 |
+
+#### 14.2.4 集群状态更新 
+
+* 主节点是唯一一个能够更新集群状态的节点。主节点一次处理一个群集状态更新，应用所需的更改并将更新的群集状态发布到群集中的所有其他节点。当其他节点接收到状态时，先确认收到消息，但是不应用最新状态。如果主节点在规定时间（`discovery.zen.commit_timeout` ，默认30s）内没有收到大多数节点(`discovery.zen.minimum_master_nodes`)的确认，集群状态更新不被通过。
+* 一旦足够的节点响应了更新的消息，新的集群状态(cluster state)被提交并且会发送一条消息给所有的节点。这些节点开始在内部应用新的集群状态。在继续处理队列中的下一个更新之前，主节点等待所有节点响应，直到超时(`discovery.zen.publish_timeout`，默认设置为30秒)。上述两个超时设置都可以通过[集群更新设置api](https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-update-settings.html)动态更改。
+
+#### 14.2.5 no Master  block机制
+
+*  对于一个可以正常充分运作的集群来说，必须拥有一个活着的主节点和正常数量(`discovery.zen.minimum_master_nodes`个)活跃的备选主节点。`discovery.zen.no_master_block`设置了没有主节点时限制的操作。它又两个可选参数：
+  * **all**：所有操作均不可做，读写、包括集群状态的读写api，例如获得索引配置(index settings)，putMapping，和集群状态(cluster state)api
+  * **write**：默认为write，写操作被拒绝执行，基于最后一次已知的正常的集群状态可读，这也许会读取到已过时的数据。
+* `discovery.zen.no_master_block`，对于节点相关的基本api，这个参数是无效的，如集群统计信息(cluster stats)，节点信息(node info)，节点统计信息(node stats)。对这些api的请求不会被阻止，并且可以在任何可用节点上运行。
+
+#### 14.2.6 增加 Refresh 时间间隔
+
+*  为了提高索引性能，Elasticsearch 在写入数据时候，采用延迟写入的策略，即数据先写到内存中，当超过默认 1 秒 （`index.refresh_interval`）会进行一次写入操作，就是将内存中 segment 数据刷新到操作系统中，此时我们才能将数据搜索出来，所以这就是为什么 Elasticsearch 提供的是**近实时**搜索功能，而不是实时搜索功能。
+* 当然像我们的内部系统对数据延迟要求不高的话，我们可以通过延长 refresh 时间间隔，可以有效的减少 segment 合并压力，提供索引速度。在做全链路跟踪的过程中，我们就将 `index.refresh_interval` 设置为 30s，减少 refresh 次数。
+* 同时，在进行全量索引时，可以将 refresh 次数临时关闭，即 `index.refresh_interval` 设置为 -1，数据导入成功后再打开到正常模式，比如 30s。
+
+#### 14.2.7 综合调优概览
+
+* ES调优综合参数设置概览：
+
+  ```yaml
+  index.merge.scheduler.max_thread_count:1 # 索引 merge ***线程数 
+  indices.memory.index_buffer_size:30%     # 内存 
+  index.translog.durability:async # 这个可以异步写硬盘，增大写的速度 
+  index.translog.sync_interval:120s #translog 间隔时间 
+  discovery.zen.ping_timeout:120s # 心跳超时时间 
+  discovery.zen.fd.ping_interval:120s     # 节点检测时间 
+  discovery.zen.fd.ping_timeout:120s     #ping 超时时间 
+  discovery.zen.fd.ping_retries:6     # 心跳重试次数 
+  thread_pool.bulk.size:20 # 写入线程个数 由于我们查询线程都是在代码里设定好的，我这里只调节了写入的线程数 
+  thread_pool.bulk.queue_size:1000 # 写入线程队列大小 
+  index.refresh_interval:300s #index 刷新间隔复制代码
+  ```
+
+  
