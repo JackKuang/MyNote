@@ -1,4 +1,4 @@
-CentOS 7 中，使用了新型的firewall，渠道了iptables防火墙
+CentOS 7 中，使用了新型的firewall，取代了iptables防火墙
 
 查看版本： firewall-cmd --version
 
@@ -33,7 +33,7 @@ systemctl enable iptables
 删除
 	firewall-cmd --remove-port=80/tcp --permanent
 查看
-	firewall-cmd --zone= public --query-port=80/tcp
+	firewall-cmd --zone=public --query-port=80/tcp
 
 重新载入
 	firewall-cmd --reload
