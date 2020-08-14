@@ -29,7 +29,7 @@ hbase(main):006:0> list
 * 创建user表， 包含base_info、extra_info两个列族
 
 ~~~ruby
-hbase(main):007:0> create 'user', 'base_info', 'extra_info'
+    hbase(main):007:0> create 'user', 'base_info', 'extra_info'
 
 或者
 

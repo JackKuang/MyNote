@@ -117,7 +117,7 @@ HDFS 是主从架构 Master/！Slave、管理节点/工作节点
 * 需要迁移数据到不同的节点。
 * 当机器负载差距超过10%的时候，负载均衡开始调整
 ```bash
-$HADOOP_HOME/sbin/start-balancer.sh -t 10%
+    $HADOOP_HOME/sbin/start-balancer.sh -t 10%
 ```
 
 ### 5.3 HDFS  安全模式
