@@ -18,6 +18,7 @@
     ![mapreduce2](img\mapreduce2.png)
 
 ## Combiner
+
 * Map端本地聚合，相当也执行一遍Reduce操作。
 * 执行时间在Map之后。
 * 不论运行多少次Combine操作，都不会影响最终的结果
