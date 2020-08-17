@@ -181,4 +181,25 @@ Presto 是基于PipeLine进行设计，在大量数据计算过程中，终端�
   bin/launcher stop
   ```
 
-  
+
+## 六、连接数据库
+
+### 6.1 MySql
+
+```properties
+# vim catalog/mysql.properties
+connector.name=mysql
+connection-url=jdbc:mysql://190.1.1.124:3307
+connection-user=root
+connection-password=LbAZ3FGlMjUBhN08
+```
+
+### 6.2 Hive
+
+```properties
+# vim catalog/hive.properties
+connector.name=hive-hadoop2
+hive.metastore.uri=thrift://ip:9083
+hive.config.resources=/etc/hadoop/conf/core-site.xml,/etc/hadoop/conf/hdfs-site.xml
+```
+
